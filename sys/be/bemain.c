@@ -22,7 +22,7 @@ static void getlock(void);
 int MAIN(int argc, char **argv)
 {
 	int fd;
-	char *dir;	
+	char *dir;
 
 	dir = nh_getenv("NETHACKDIR");
 	if (!dir) dir = nh_getenv("HACKDIR");
@@ -129,22 +129,22 @@ not_recovered:
 
 static void whoami(void)
 {
-	/*
-	 * Who am i? Algorithm: 1. Use name as specified in NETHACKOPTIONS
-	 *                      2. Use $USER or $LOGNAME        (if 1. fails)
-	 * The resulting name is overridden by command line options.
-	 * If everything fails, or if the resulting name is some generic
-	 * account like "games", "play", "player", "hack" then eventually
-	 * we'll ask him.
-	 */
-	char *s;
+        /*
+         * Who am i? Algorithm: 1. Use name as specified in NETHACKOPTIONS
+         *                      2. Use $USER or $LOGNAME        (if 1. fails)
+         * The resulting name is overridden by command line options.
+         * If everything fails, or if the resulting name is some generic
+         * account like "games", "play", "player", "hack" then eventually
+         * we'll ask him.
+         */
+        char *s;
 
-	if (*plname) return;
-	if (s = nh_getenv("USER")) {
+        if (*plname) return;
+        if (s = nh_getenv("USER")) {
 		(void) strncpy(plname, s, sizeof(plname)-1);
 		return;
 	}
-	if (s = nh_getenv("LOGNAME")) {
+        if (s = nh_getenv("LOGNAME")) {
 		(void) strncpy(plname, s, sizeof(plname)-1);
 		return;
 	}
@@ -168,6 +168,7 @@ static void process_options(int argc, char **argv)
 		argc--;
 		switch (argv[0][1]) {
 		case 'D':
+		case 'Z':
 #ifdef WIZARD
 			wizard = TRUE;
 			break;
@@ -211,6 +212,28 @@ static void process_options(int argc, char **argv)
 				argv++;
 			    if ((i = str2race(argv[0])) >= 0)
 			    	flags.initrace = i;
+			}
+			break;
+		case 'g': /* gender */
+			if (argv[0][2]) {
+			    if ((i = str2gend(&argv[0][2])) >= 0)
+			    	flags.initgend = i;
+			} else if (argc > 1) {
+				argc--;
+				argv++;
+			    if ((i = str2gend(argv[0])) >= 0)
+			    	flags.initgend = i;
+			}
+			break;
+		case 'a': /* align */
+			if (argv[0][2]) {
+			    if ((i = str2align(&argv[0][2])) >= 0)
+			    	flags.initalign = i;
+			} else if (argc > 1) {
+				argc--;
+				argv++;
+			    if ((i = str2align(argv[0])) >= 0)
+			    	flags.initalign = i;
 			}
 			break;
 		case '@':

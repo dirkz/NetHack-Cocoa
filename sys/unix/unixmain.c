@@ -7,6 +7,10 @@
 #include "hack.h"
 #include "dlb.h"
 
+#ifdef MACOSX_CHDIR_ARGV0
+#include <errno.h>
+#endif
+
 #include <sys/stat.h>
 #include <signal.h>
 #include <pwd.h>
@@ -39,6 +43,11 @@ extern void NDECL(check_linux_console);
 extern void NDECL(init_linux_cons);
 #endif
 
+#ifdef LINUX
+extern void NDECL(check_linux_console);
+extern void NDECL(init_linux_cons);
+#endif
+ 
 static void NDECL(wd_message);
 #ifdef WIZARD
 static boolean wiz_error_flag = FALSE;
@@ -59,41 +68,24 @@ char *argv[];
 #endif
 	boolean exact_username;
 
-#if defined(__APPLE__)
-	/* special hack to change working directory to a resource fork when
-	   running from finder --sam */
-#define MAC_PATH_VALUE ".app/Contents/MacOS/"
-	char mac_cwd[1024], *mac_exe = argv[0], *mac_tmp;
-	int arg0_len = strlen(mac_exe), mac_tmp_len, mac_lhs_len=0;
-	getcwd(mac_cwd, 1024);
-	if(mac_exe[0] == '/' && !strcmp(mac_cwd, "/")) {
-	    if((mac_exe = strrchr(mac_exe, '/')))
-		mac_exe++;
-	    else
-		mac_exe = argv[0];
-	    mac_tmp_len = (strlen(mac_exe) * 2) + strlen(MAC_PATH_VALUE);
-	    if(mac_tmp_len <= arg0_len) {
-		mac_tmp = malloc(mac_tmp_len + 1);
-		sprintf(mac_tmp, "%s%s%s", mac_exe, MAC_PATH_VALUE, mac_exe);
-		if(!strcmp(argv[0] + (arg0_len - mac_tmp_len), mac_tmp)) {
-		    mac_lhs_len = (arg0_len - mac_tmp_len) + strlen(mac_exe) + 5;
-		    if(mac_lhs_len > mac_tmp_len - 1)
-			mac_tmp = realloc(mac_tmp, mac_lhs_len);
-		    strncpy(mac_tmp, argv[0], mac_lhs_len);
-		    mac_tmp[mac_lhs_len] = '\0';
-		    chdir(mac_tmp);
-		}
-		free(mac_tmp);
-	    }
+#ifdef MACOSX_CHDIR_ARGV0
+	char osxCwd[FQN_MAX_FILENAME];
+	strcpy(osxCwd, argv[0]);
+	char *osxSlash = strrchr(osxCwd, '/');
+	*osxSlash = '\0';
+	int osxErr = chdir(osxCwd);
+	if (osxErr) {
+		perror(osxCwd);
 	}
-#endif
+	mkdir("save", 0700);
+#endif /* MACOSX_CHDIR_ARGV0 */
 
 	hname = argv[0];
 	hackpid = getpid();
 	(void) umask(0777 & ~FCMASK);
 
 	choose_windows(DEFAULT_WINDOW_SYS);
-
+	
 #ifdef CHDIR			/* otherwise no chdir() */
 	/*
 	 * See if we must change directory to the playground.
@@ -150,8 +142,18 @@ char *argv[];
 #ifdef _M_UNIX
 	check_sco_console();
 #endif
-#ifdef __linux__
+#ifdef LINUX
 	check_linux_console();
+#endif
+#ifdef PROXY_GRAPHICS
+	/* Handle --proxy before options, if supported */
+	if (argc > 1 && !strcmp(argv[1], "--proxy")) {
+	    argv[1] = argv[0];
+	    argc--;
+	    argv++;
+	    choose_windows("proxy");
+	    lock_windows(TRUE);         /* Can't be overridden from options */
+	}
 #endif
 	initoptions();
 	init_nhwindows(&argc,argv);
@@ -159,10 +161,9 @@ char *argv[];
 #ifdef _M_UNIX
 	init_sco_cons();
 #endif
-#ifdef __linux__
+#ifdef LINUX
 	init_linux_cons();
 #endif
-
 	/*
 	 * It seems you really want to play.
 	 */
@@ -171,10 +172,11 @@ char *argv[];
 #ifdef SIGXCPU
 	(void) signal(SIGXCPU, (SIG_RET_TYPE) hangup);
 #endif
+#ifdef SIGPIPE		/* eg., a lost proxy connection */
+	(void) signal(SIGPIPE, (SIG_RET_TYPE) hangup);
+#endif
 
 	process_options(argc, argv);	/* command line options */
-
-	/*wizard = TRUE; /* debugging */
 
 #ifdef DEF_PAGER
 	if(!(catmore = nh_getenv("HACKPAGER")) && !(catmore = nh_getenv("PAGER")))
@@ -249,13 +251,17 @@ char *argv[];
 		 */
 		boolean remember_wiz_mode = wizard;
 #endif
+#ifndef FILE_AREAS
 		const char *fq_save = fqname(SAVEF, SAVEPREFIX, 1);
 
 		(void) chmod(fq_save,0);	/* disallow parallel restores */
+#else
+		(void) chmod_area(FILE_AREA_SAVE, SAVEF, 0);
+#endif
 		(void) signal(SIGINT, (SIG_RET_TYPE) done1);
 #ifdef NEWS
 		if(iflags.news) {
-		    display_file(NEWS, FALSE);
+		    display_file_area(NEWS_AREA, NEWS, FALSE);
 		    iflags.news = FALSE; /* in case dorecover() fails */
 		}
 #endif
@@ -273,8 +279,13 @@ char *argv[];
 			if(yn("Do you want to keep the save file?") == 'n')
 			    (void) delete_savefile();
 			else {
+#ifndef FILE_AREAS
 			    (void) chmod(fq_save,FCMASK); /* back to readable */
-			    compress(fq_save);
+			    compress_area(NULL, fq_save);
+#else
+			    (void) chmod_area(FILE_AREA_SAVE, SAVEF, FCMASK);
+			    compress_area(FILE_AREA_SAVE, SAVEF);
+#endif
 			}
 		}
 		flags.move = 0;
@@ -311,6 +322,7 @@ char *argv[];
 		argc--;
 		switch(argv[0][1]){
 		case 'D':
+		case 'Z':
 #ifdef WIZARD
 			{
 			  char *user;
@@ -333,17 +345,10 @@ char *argv[];
 				  pw = getpwuid(uid);
 			      }
 			  }
-#ifdef COCOA_GRAPHICS
-				if (!strcmp(plname,WIZARD) || (pw && !strcmp(pw->pw_name,WIZARD))) {
-					wizard = TRUE;
-					break;
-				}
-#else
-				if (pw && !strcmp(pw->pw_name,WIZARD)) {
-					wizard = TRUE;
-					break;
-				}
-#endif
+			  if (pw && !strcmp(pw->pw_name,WIZARD)) {
+			      wizard = TRUE;
+			      break;
+			  }
 			}
 			/* otherwise fall thru to discover */
 			wiz_error_flag = TRUE;
@@ -366,12 +371,10 @@ char *argv[];
 			} else
 				raw_print("Player name expected after -u");
 			break;
-		case 'I':
 		case 'i':
 			if (!strncmpi(argv[0]+1, "IBM", 3))
 				switch_graphics(IBM_GRAPHICS);
 			break;
-	    /*  case 'D': */
 		case 'd':
 			if (!strncmpi(argv[0]+1, "DEC", 3))
 				switch_graphics(DEC_GRAPHICS);
@@ -396,6 +399,28 @@ char *argv[];
 				argv++;
 			    if ((i = str2race(argv[0])) >= 0)
 			    	flags.initrace = i;
+			}
+			break;
+		case 'g': /* gender */
+			if (argv[0][2]) {
+			    if ((i = str2gend(&argv[0][2])) >= 0)
+			    	flags.initgend = i;
+			} else if (argc > 1) {
+				argc--;
+				argv++;
+			    if ((i = str2gend(argv[0])) >= 0)
+			    	flags.initgend = i;
+			}
+			break;
+		case 'a': /* align */
+			if (argv[0][2]) {
+			    if ((i = str2align(&argv[0][2])) >= 0)
+			    	flags.initalign = i;
+			} else if (argc > 1) {
+				argc--;
+				argv++;
+			    if ((i = str2align(argv[0])) >= 0)
+			    	flags.initalign = i;
 			}
 			break;
 		case '@':
@@ -509,7 +534,7 @@ port_help()
 	 * Display unix-specific help.   Just show contents of the helpfile
 	 * named by PORT_HELP.
 	 */
-	display_file(PORT_HELP, TRUE);
+	display_file_area(FILE_AREA_SHARE, PORT_HELP, TRUE);
 }
 #endif
 

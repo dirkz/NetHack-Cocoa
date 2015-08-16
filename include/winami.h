@@ -29,9 +29,9 @@ struct amii_menu
 {
     amii_menu_item *items;	/* Starting pointer for item list. */
     amii_menu_item *last;	/* End pointer for item list. */
-    const char	   *query;	/* Query string */
+    const char     *query;	/* Query string */
     int		    count;	/* Number of strings. */
-    char	    chr;	/* Character to assign for accelerator */
+    char            chr;	/* Character to assign for accelerator */
 };
 
 /* descriptor for Amiga Intuition-based windows.  If we decide to cope with

@@ -1,15 +1,18 @@
 
-    NetHack version 3.4.3
+    SlashEM version 0.0.7E7F3
 
 Options compiled into this edition:
 
-    color, data file compression, debug mode, Elbereth,
+    blackmarket level, color, data file compression, debug mode, Elbereth,
     experience points on status line,
-    insurance files for recovering from crashes, Keystone Kops, log file,
-    mail daemon, news file, redo command, rogue level, saddles and riding,
-    screen clipping, seduction, shell command, sinks, suspend command,
-    terminal info library, tourists, walled mazes,
-    save and bones files accepted from versions 3.4.0 through 3.4.3,
+    insurance files for recovering from crashes, light sourced spell effects,
+    invisible objects, Keystone Kops, log file, mail daemon, news file,
+    redo command, saddles and riding, display layers, screen clipping,
+    seduction, shell command, show damage amounts, show weight of inventory,
+    sinks, suspend command, terminal info library,
+    lightsabers and dim lightsabers, Houchou, firearms, tourists,
+    walled mazes, yeomen,
+    save and bones files accepted from versions 0.0.7E2 through 0.0.7E7,
     basic NetHack features.
 
 Supported windowing systems:

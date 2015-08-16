@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "d6335498-75d6-11de-abb5-1d1887d8974b++505",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "d6335498-75d6-11de-abb5-1d1887d8974b++505" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "d6335498-75d6-11de-abb5-1d1887d8974b++505" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "2A7B1A5D-A0A3-4F8F-BBB7-3EBE672CCE52",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "d6335498-75d6-11de-abb5-1d1887d8974b++505" : "SlashEMCocoa\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "SlashEM",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "sys\/macosx\/SlashEM.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/nethack-cocoa.googlecode.com\/svn",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "d6335498-75d6-11de-abb5-1d1887d8974b++505"
+    }
+  ]
+}

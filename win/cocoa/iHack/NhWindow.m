@@ -67,68 +67,19 @@ static NhWindow *s_mapWindow = nil;
 
 - (BOOL)stringIsVoiced:(NSString *)s
 {
+	return NO;
+	
 	if ( type != NHW_MESSAGE )
 		return NO;
-
-	if ( [s hasPrefix:@"You feel "] )
+	if ( [s hasPrefix:@"You kill "] )
 		return YES;
-	if ( [s hasPrefix:@"You hear "] )
+	if ( [s hasPrefix:@"You destroy "] )
 		return YES;
 	if ( [s hasPrefix:@"You fall down the stairs."] )
 		return YES;
-	
-	// blinded
-	if ( [s hasPrefix:@"Everything suddenly goes dark"] )
+	if ( [s hasPrefix:@"Your movements are "] )
 		return YES;
-	if ( [s hasPrefix:@"It suddenly gets dark"] )
-		return YES;
-	if ( [s containsString:@"blinds you"] )
-		return YES;
-	if ( [s containsString:@"been creamed"] )
-		return YES;
-	
-	// hunger
-	if ( [s containsString:@" feel hungry"] )
-		return YES;
-	if ( [s containsString:@" feel weak"] )
-		return YES;
-	if ( [s hasPrefix:@"You faint "] )
-		return YES;
-	if ( [s containsString:@" needs food, badly!"] )
-		return YES;
-	
-	// pet
-	if ( [s containsString:@"feeling for a moment, then it passes"] )
-		return YES;
-	
-	// confused/stunned
-	if ( [s containsString:@"confuses you"] )
-		return YES;
-	if ( [s hasPrefix:@"You stagger"] )
-		return YES;
-	if ( [s hasPrefix:@"You reel..."] )
-		return YES;
-	
-	// hallucinating
-	if ( [s containsString:@"are freaked out"] )
-		return YES;
-
-	// movement
-	if ( [s containsString:@"Movement is "] )
-		return YES;
-	if ( [s containsString:@"movements are "] )
-		return YES;
-	if ( [s containsString:@"move a handspan "] )
-		return YES;
-
-	// stoning/chocking/sliming
-	if ( [s hasPrefix:@"You are slowing down"] )
-		return YES;
-	if ( [s hasPrefix:@"You find it hard to breathe"] )
-		return YES;
-	if ( [s containsString:@" is becoming constricted"] )
-		return YES;
-	if ( [s hasPrefix:@"You are turning a little"] )
+	if ( [s hasPrefix:@"You feel "] )
 		return YES;
 	
 	return NO;
@@ -186,8 +137,6 @@ static NhWindow *s_mapWindow = nil;
 	NSString *s = [NSString stringWithCString:str encoding:NSASCIIStringEncoding];
 //	s = [s stringWithTrimmedWhitespaces];
 	
-//	s = [NSString stringWithFormat:@"%d: %@",moves,s];
-	
 	if ( [self useAttributedStrings] ) {
 
 		NSDictionary * dict = nil;
@@ -206,6 +155,7 @@ static NhWindow *s_mapWindow = nil;
 						MainWindowController * main = [MainWindowController instance];
 						[main speakString:s];
 					}
+					s = [NSString stringWithFormat:@"%d %@", moves, s];
 				}
 				break;
 			case ATR_BOLD:

@@ -436,7 +436,7 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  45
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   83
+#define YYLAST   85
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  30
@@ -445,7 +445,7 @@ union yyalloc
 /* YYNRULES -- Number of rules.  */
 #define YYNRULES  49
 /* YYNRULES -- Number of states.  */
-#define YYNSTATES  109
+#define YYNSTATES  111
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
@@ -495,8 +495,8 @@ static const yytype_uint8 yyprhs[] =
        0,     0,     3,     4,     6,     8,    11,    13,    15,    17,
       19,    26,    27,    29,    31,    33,    35,    39,    41,    45,
       49,    53,    55,    57,    59,    61,    63,    70,    78,    86,
-      95,    99,   103,   111,   120,   129,   139,   141,   143,   151,
-     160,   161,   163,   165,   167,   169,   170,   172,   174,   180
+      95,    99,   103,   111,   120,   129,   139,   141,   143,   152,
+     162,   163,   165,   167,   169,   171,   172,   174,   176,   182
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS.  */
@@ -517,20 +517,20 @@ static const yytype_int8 yyrhs[] =
        9,    24,    23,    52,    23,    26,    54,     3,    -1,    10,
       24,    23,    52,    23,    26,    54,     3,     3,    -1,    48,
       -1,    49,    -1,     5,    24,    23,    25,    53,    50,    51,
-      -1,     6,    24,    23,    23,    26,    54,    50,    51,    -1,
-      -1,    19,    -1,    20,    -1,    21,    -1,    22,    -1,    -1,
-      11,    -1,    23,    -1,    27,     3,    28,     3,    29,    -1,
-      27,     3,    28,     3,    29,    -1
+      35,    -1,     6,    24,    23,    23,    26,    54,    50,    51,
+      35,    -1,    -1,    19,    -1,    20,    -1,    21,    -1,    22,
+      -1,    -1,    11,    -1,    23,    -1,    27,     3,    28,     3,
+      29,    -1,    27,     3,    28,     3,    29,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
        0,    81,    81,    82,    88,    89,    92,    93,    94,    95,
-      98,   111,   114,   120,   121,   122,   125,   131,   134,   141,
-     150,   157,   158,   159,   160,   161,   164,   174,   187,   198,
-     212,   219,   228,   241,   257,   271,   288,   289,   292,   306,
-     323,   326,   330,   334,   338,   345,   348,   354,   384,   421
+      98,   113,   116,   122,   123,   124,   127,   134,   137,   144,
+     153,   162,   163,   164,   165,   166,   169,   181,   196,   209,
+     225,   232,   241,   256,   274,   290,   309,   310,   313,   330,
+     350,   353,   357,   361,   365,   372,   375,   381,   411,   448
 };
 #endif
 
@@ -578,7 +578,7 @@ static const yytype_uint8 yyr2[] =
        0,     2,     0,     1,     1,     2,     1,     1,     1,     1,
        6,     0,     1,     1,     1,     1,     3,     1,     3,     3,
        3,     1,     1,     1,     1,     1,     6,     7,     7,     8,
-       3,     3,     7,     8,     8,     9,     1,     1,     7,     8,
+       3,     3,     7,     8,     8,     9,     1,     1,     8,     9,
        0,     1,     1,     1,     1,     0,     1,     1,     5,     5
 };
 
@@ -596,8 +596,9 @@ static const yytype_uint8 yydefact[] =
       47,     0,     0,     0,     0,     0,     0,     0,     0,    11,
        0,    40,     0,     0,     0,     0,     0,     0,    12,    10,
        0,    41,    42,    43,    44,    45,    40,    26,     0,     0,
-       0,     0,     0,    46,    38,    45,    28,    27,    32,     0,
-       0,     0,    39,    29,    34,    33,    49,    48,    35
+       0,     0,     0,    46,    11,    45,    28,    27,    32,     0,
+       0,     0,    38,    11,    29,    34,    33,    49,    48,    39,
+      35
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
@@ -610,28 +611,29 @@ static const yytype_int8 yydefgoto[] =
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-#define YYPACT_NINF -73
+#define YYPACT_NINF -84
 static const yytype_int8 yypact[] =
 {
-      -3,   -16,   -13,    -8,     5,     6,     7,     8,     9,    10,
-      11,    12,    13,    14,    39,    -3,   -73,   -73,   -73,   -73,
-     -73,   -73,   -73,   -73,   -73,   -73,   -73,   -73,   -73,   -73,
-     -73,   -73,    17,    18,    19,    20,    21,    22,    23,    24,
-      34,    35,    36,    37,    49,   -73,   -73,    30,    29,    32,
-      30,    30,    30,    30,   -73,   -73,   -73,   -73,   -73,   -73,
-     -73,    31,    33,    38,    40,    41,    44,    45,    53,    54,
-      56,     0,    31,    33,    33,    43,    46,    42,   -73,   -73,
-      47,   -73,   -73,   -73,   -73,    50,     0,    59,    60,    31,
-      31,    68,    70,   -73,   -73,    50,   -73,    71,    73,    74,
-      51,    52,   -73,   -73,   -73,    75,   -73,   -73,   -73
+      -3,   -16,    -8,    -5,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    41,    -3,   -84,   -84,   -84,   -84,
+     -84,   -84,   -84,   -84,   -84,   -84,   -84,   -84,   -84,   -84,
+     -84,   -84,    19,    20,    21,    22,    23,    24,    25,    26,
+      36,    37,    38,    39,    51,   -84,   -84,    32,    31,    34,
+      32,    32,    32,    32,   -84,   -84,   -84,   -84,   -84,   -84,
+     -84,    33,    35,    40,    42,    43,    46,    47,    55,    56,
+      58,     2,    33,    35,    35,    45,    48,    44,   -84,   -84,
+      49,   -84,   -84,   -84,   -84,    52,     2,    61,    62,    33,
+      33,    70,    72,   -84,    56,    52,   -84,    73,    75,    76,
+      53,    54,   -84,    56,   -84,   -84,    77,   -84,   -84,   -84,
+     -84
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -73,   -73,   -73,    64,   -73,   -73,   -73,   -73,   -73,   -73,
-     -73,   -73,   -73,   -73,   -73,   -73,   -73,   -73,   -73,   -73,
-      -4,   -12,   -27,   -46,   -72
+     -84,   -84,   -84,    66,   -84,   -83,   -84,   -84,   -84,   -84,
+     -84,   -84,   -84,   -84,   -84,   -84,   -84,   -84,   -84,   -84,
+      -2,   -10,   -25,   -44,   -72
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -642,27 +644,27 @@ static const yytype_int8 yypgoto[] =
 static const yytype_uint8 yytable[] =
 {
       86,     1,     2,     3,     4,     5,     6,     7,    32,     8,
-       9,    33,    10,    11,    12,    13,    34,    98,    99,    81,
-      82,    83,    84,    64,    65,    66,    67,    87,    88,    35,
-      36,    37,    38,    39,    40,    41,    42,    43,    44,    45,
-      47,    48,    49,    50,    51,    52,    53,    54,    55,    56,
-      57,    58,    59,    60,    62,    63,    77,    78,    68,    80,
-      70,    93,    96,    97,    72,    73,    74,    75,    76,    89,
-      91,   100,    90,   101,   103,    92,   104,   105,   108,    46,
-     106,   107,    95,   102
+       9,   102,    10,    11,    12,    13,    33,    98,    99,    34,
+     109,    81,    82,    83,    84,    64,    65,    66,    67,    87,
+      88,    35,    36,    37,    38,    39,    40,    41,    42,    43,
+      44,    45,    47,    48,    49,    50,    51,    52,    53,    54,
+      55,    56,    57,    58,    59,    60,    62,    63,    77,    78,
+      68,    80,    70,    93,    96,    97,    72,    73,    74,    75,
+      76,    89,    91,   100,    90,   101,   104,    92,   105,   106,
+     110,    46,   107,   108,    95,   103
 };
 
 static const yytype_uint8 yycheck[] =
 {
       72,     4,     5,     6,     7,     8,     9,    10,    24,    12,
-      13,    24,    15,    16,    17,    18,    24,    89,    90,    19,
-      20,    21,    22,    50,    51,    52,    53,    73,    74,    24,
-      24,    24,    24,    24,    24,    24,    24,    24,    24,     0,
-      23,    23,    23,    23,    23,    23,    23,    23,    14,    14,
-      14,    14,     3,    23,    25,    23,     3,     3,    27,     3,
-      27,    11,     3,     3,    26,    25,    25,    23,    23,    26,
-      28,     3,    26,     3,     3,    28,     3,     3,     3,    15,
-      29,    29,    86,    95
+      13,    94,    15,    16,    17,    18,    24,    89,    90,    24,
+     103,    19,    20,    21,    22,    50,    51,    52,    53,    73,
+      74,    24,    24,    24,    24,    24,    24,    24,    24,    24,
+      24,     0,    23,    23,    23,    23,    23,    23,    23,    23,
+      14,    14,    14,    14,     3,    23,    25,    23,     3,     3,
+      27,     3,    27,    11,     3,     3,    26,    25,    25,    23,
+      23,    26,    28,     3,    26,     3,     3,    28,     3,     3,
+       3,    15,    29,    29,    86,    95
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -679,7 +681,8 @@ static const yytype_uint8 yystos[] =
       27,    53,    26,    25,    25,    23,    23,     3,     3,    35,
        3,    19,    20,    21,    22,    50,    54,    53,    53,    26,
       26,    28,    28,    11,    51,    50,     3,     3,    54,    54,
-       3,     3,    51,     3,     3,     3,    29,    29,     3
+       3,     3,    35,    51,     3,     3,     3,    29,    29,    35,
+       3
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1504,6 +1507,8 @@ yyreduce:
 #line 99 "dgn_comp.y"
     {
 			init_dungeon();
+			if (strlen((yyvsp[(3) - (6)].str))+1 > sizeof(tmpdungeon[n_dgns].name))
+			    yyerror("Dungeon name is too long");
 			Strcpy(tmpdungeon[n_dgns].name, (yyvsp[(3) - (6)].str));
 			tmpdungeon[n_dgns].boneschar = (char)(yyvsp[(4) - (6)].i);
 			tmpdungeon[n_dgns].lev.base = couple.base;
@@ -1514,28 +1519,29 @@ yyreduce:
     break;
 
   case 11:
-#line 111 "dgn_comp.y"
+#line 113 "dgn_comp.y"
     {
 			(yyval.i) = 0;
 		  }
     break;
 
   case 12:
-#line 115 "dgn_comp.y"
+#line 117 "dgn_comp.y"
     {
 			(yyval.i) = (yyvsp[(1) - (1)].i);
 		  }
     break;
 
   case 16:
-#line 126 "dgn_comp.y"
+#line 128 "dgn_comp.y"
     {
-			tmpdungeon[n_dgns].entry_lev = (yyvsp[(3) - (3)].i);
+			/* tmpdungeon[n_dgns].entry_lev = $3; */
+                        yyerror("ENTRY is obsolete!");
 		  }
     break;
 
   case 18:
-#line 135 "dgn_comp.y"
+#line 138 "dgn_comp.y"
     {
 			if((yyvsp[(3) - (3)].i) <= TOWN || (yyvsp[(3) - (3)].i) >= D_ALIGN_CHAOTIC)
 			    yyerror("Illegal description - ignoring!");
@@ -1545,7 +1551,7 @@ yyreduce:
     break;
 
   case 19:
-#line 142 "dgn_comp.y"
+#line 145 "dgn_comp.y"
     {
 			if((yyvsp[(3) - (3)].i) && (yyvsp[(3) - (3)].i) < D_ALIGN_CHAOTIC)
 			    yyerror("Illegal alignment - ignoring!");
@@ -1555,17 +1561,21 @@ yyreduce:
     break;
 
   case 20:
-#line 151 "dgn_comp.y"
+#line 154 "dgn_comp.y"
     {
+			if (strlen((yyvsp[(3) - (3)].str))+1 > sizeof(tmpdungeon[n_dgns].protoname))
+			    yyerror("Proto name is too long");
 			Strcpy(tmpdungeon[n_dgns].protoname, (yyvsp[(3) - (3)].str));
 			Free((yyvsp[(3) - (3)].str));
 		  }
     break;
 
   case 26:
-#line 165 "dgn_comp.y"
+#line 170 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (6)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (6)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (6)].i);
 			tmplevel[n_levs].lev.base = couple.base;
@@ -1576,9 +1586,11 @@ yyreduce:
     break;
 
   case 27:
-#line 175 "dgn_comp.y"
+#line 182 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (7)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (7)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (7)].i);
 			tmplevel[n_levs].lev.base = couple.base;
@@ -1590,9 +1602,11 @@ yyreduce:
     break;
 
   case 28:
-#line 188 "dgn_comp.y"
+#line 197 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (7)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (7)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (7)].i);
 			tmplevel[n_levs].lev.base = couple.base;
@@ -1604,9 +1618,11 @@ yyreduce:
     break;
 
   case 29:
-#line 199 "dgn_comp.y"
+#line 210 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (8)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (8)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (8)].i);
 			tmplevel[n_levs].lev.base = couple.base;
@@ -1619,7 +1635,7 @@ yyreduce:
     break;
 
   case 30:
-#line 213 "dgn_comp.y"
+#line 226 "dgn_comp.y"
     {
 			if((yyvsp[(3) - (3)].i) >= D_ALIGN_CHAOTIC)
 			    yyerror("Illegal description - ignoring!");
@@ -1629,7 +1645,7 @@ yyreduce:
     break;
 
   case 31:
-#line 220 "dgn_comp.y"
+#line 233 "dgn_comp.y"
     {
 			if((yyvsp[(3) - (3)].i) && (yyvsp[(3) - (3)].i) < D_ALIGN_CHAOTIC)
 			    yyerror("Illegal alignment - ignoring!");
@@ -1639,9 +1655,11 @@ yyreduce:
     break;
 
   case 32:
-#line 229 "dgn_comp.y"
+#line 242 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (7)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (7)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (7)].i);
 			tmplevel[n_levs].chain = getchain((yyvsp[(5) - (7)].str));
@@ -1655,9 +1673,11 @@ yyreduce:
     break;
 
   case 33:
-#line 242 "dgn_comp.y"
+#line 257 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (8)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (8)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (8)].i);
 			tmplevel[n_levs].chain = getchain((yyvsp[(5) - (8)].str));
@@ -1672,9 +1692,11 @@ yyreduce:
     break;
 
   case 34:
-#line 258 "dgn_comp.y"
+#line 275 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (8)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (8)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (8)].i);
 			tmplevel[n_levs].chain = getchain((yyvsp[(5) - (8)].str));
@@ -1689,9 +1711,11 @@ yyreduce:
     break;
 
   case 35:
-#line 272 "dgn_comp.y"
+#line 291 "dgn_comp.y"
     {
 			init_level();
+			if (strlen((yyvsp[(3) - (9)].str))+1 > sizeof(tmplevel[n_levs].name))
+			    yyerror("Level name is too long");
 			Strcpy(tmplevel[n_levs].name, (yyvsp[(3) - (9)].str));
 			tmplevel[n_levs].boneschar = (char)(yyvsp[(4) - (9)].i);
 			tmplevel[n_levs].chain = getchain((yyvsp[(5) - (9)].str));
@@ -1707,88 +1731,94 @@ yyreduce:
     break;
 
   case 38:
-#line 293 "dgn_comp.y"
+#line 314 "dgn_comp.y"
     {
 			init_branch();
-			Strcpy(tmpbranch[n_brs].name, (yyvsp[(3) - (7)].str));
+			if (strlen((yyvsp[(3) - (8)].str))+1 > sizeof(tmpbranch[n_brs].name))
+			    yyerror("Dungeon name is too long");
+			Strcpy(tmpbranch[n_brs].name, (yyvsp[(3) - (8)].str));
 			tmpbranch[n_brs].lev.base = couple.base;
 			tmpbranch[n_brs].lev.rand = couple.rand;
-			tmpbranch[n_brs].type = (yyvsp[(6) - (7)].i);
-			tmpbranch[n_brs].up = (yyvsp[(7) - (7)].i);
+			tmpbranch[n_brs].type = (yyvsp[(6) - (8)].i);
+			tmpbranch[n_brs].up = (yyvsp[(7) - (8)].i);
+                        tmpbranch[n_brs].entry_lev = (yyvsp[(8) - (8)].i);
 			if(!check_branch()) n_brs--;
 			else tmpdungeon[n_dgns].branches++;
-			Free((yyvsp[(3) - (7)].str));
+			Free((yyvsp[(3) - (8)].str));
 		  }
     break;
 
   case 39:
-#line 307 "dgn_comp.y"
+#line 331 "dgn_comp.y"
     {
 			init_branch();
-			Strcpy(tmpbranch[n_brs].name, (yyvsp[(3) - (8)].str));
-			tmpbranch[n_brs].chain = getchain((yyvsp[(4) - (8)].str));
+			if (strlen((yyvsp[(3) - (9)].str))+1 > sizeof(tmpbranch[n_brs].name))
+			    yyerror("Dungeon name is too long");
+			Strcpy(tmpbranch[n_brs].name, (yyvsp[(3) - (9)].str));
+			tmpbranch[n_brs].chain = getchain((yyvsp[(4) - (9)].str));
 			tmpbranch[n_brs].lev.base = couple.base;
 			tmpbranch[n_brs].lev.rand = couple.rand;
-			tmpbranch[n_brs].type = (yyvsp[(7) - (8)].i);
-			tmpbranch[n_brs].up = (yyvsp[(8) - (8)].i);
+			tmpbranch[n_brs].type = (yyvsp[(7) - (9)].i);
+			tmpbranch[n_brs].up = (yyvsp[(8) - (9)].i);
+			tmpbranch[n_brs].entry_lev = (yyvsp[(9) - (9)].i);
 			if(!check_branch()) n_brs--;
 			else tmpdungeon[n_dgns].branches++;
-			Free((yyvsp[(3) - (8)].str));
-			Free((yyvsp[(4) - (8)].str));
+			Free((yyvsp[(3) - (9)].str));
+			Free((yyvsp[(4) - (9)].str));
 		  }
     break;
 
   case 40:
-#line 323 "dgn_comp.y"
+#line 350 "dgn_comp.y"
     {
 			(yyval.i) = TBR_STAIR;	/* two way stair */
 		  }
     break;
 
   case 41:
-#line 327 "dgn_comp.y"
+#line 354 "dgn_comp.y"
     {
 			(yyval.i) = TBR_STAIR;	/* two way stair */
 		  }
     break;
 
   case 42:
-#line 331 "dgn_comp.y"
+#line 358 "dgn_comp.y"
     {
 			(yyval.i) = TBR_NO_UP;	/* no up staircase */
 		  }
     break;
 
   case 43:
-#line 335 "dgn_comp.y"
+#line 362 "dgn_comp.y"
     {
 			(yyval.i) = TBR_NO_DOWN;	/* no down staircase */
 		  }
     break;
 
   case 44:
-#line 339 "dgn_comp.y"
+#line 366 "dgn_comp.y"
     {
 			(yyval.i) = TBR_PORTAL;	/* portal connection */
 		  }
     break;
 
   case 45:
-#line 345 "dgn_comp.y"
+#line 372 "dgn_comp.y"
     {
 			(yyval.i) = 0;	/* defaults to down */
 		  }
     break;
 
   case 46:
-#line 349 "dgn_comp.y"
+#line 376 "dgn_comp.y"
     {
 			(yyval.i) = (yyvsp[(1) - (1)].i);
 		  }
     break;
 
   case 47:
-#line 355 "dgn_comp.y"
+#line 382 "dgn_comp.y"
     {
 			char *p = (yyvsp[(1) - (1)].str);
 			if (strlen(p) != 1) {
@@ -1802,7 +1832,7 @@ yyreduce:
     break;
 
   case 48:
-#line 385 "dgn_comp.y"
+#line 412 "dgn_comp.y"
     {
 			if ((yyvsp[(2) - (5)].i) < -MAXLEVEL || (yyvsp[(2) - (5)].i) > MAXLEVEL) {
 			    yyerror("Abs base out of dlevel range - zeroing!");
@@ -1820,7 +1850,7 @@ yyreduce:
     break;
 
   case 49:
-#line 422 "dgn_comp.y"
+#line 449 "dgn_comp.y"
     {
 			if ((yyvsp[(2) - (5)].i) < -MAXLEVEL || (yyvsp[(2) - (5)].i) > MAXLEVEL) {
 			    yyerror("Rel base out of dlevel range - zeroing!");
@@ -1834,7 +1864,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 1838 "y.tab.c"
+#line 1868 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2048,7 +2078,7 @@ yyreturn:
 }
 
 
-#line 432 "dgn_comp.y"
+#line 459 "dgn_comp.y"
 
 
 void
@@ -2070,7 +2100,6 @@ init_dungeon()
 	tmpdungeon[n_dgns].flags = 0;
 	tmpdungeon[n_dgns].levels = 0;
 	tmpdungeon[n_dgns].branches = 0;
-	tmpdungeon[n_dgns].entry_lev = 0;
 }
 
 void
@@ -2102,6 +2131,7 @@ init_branch()
 	tmpbranch[n_brs].lev.rand = 0;
 	Strcpy(tmpbranch[n_brs].name, "");
 	tmpbranch[n_brs].chain = -1;
+	tmpbranch[n_brs].entry_lev = 0;
 }
 
 int
@@ -2184,10 +2214,10 @@ check_level()
 	    }
 
 	if(tmplevel[i].chain == -2) {
-		yyerror("Invaild level chain reference.");
+		yyerror("Invalid level chain reference.");
 		return(0);
 	} else if(tmplevel[i].chain != -1) {	/* there is a chain */
-	    /* KMH -- tmplevel[tmpbranch[i].chain].chance was in error */
+		/* KMH -- tmplevel[tmpbranch[i].chain].chance was in error */
 	    if(tmplevel[tmplevel[i].chain].chance != 100) {
 		yyerror("Level cannot chain from a probabilistic level.");
 		return(0);
@@ -2201,8 +2231,8 @@ check_level()
 
 /*
  *	- A branch may not branch backwards - to avoid branch loops.
- *	- A branch name must be unique.
- *	  (ie. You can only have one entry point to each dungeon).
+ *	- A branch name need not be unique.
+ *	  (ie. You can have many entry points to each dungeon).
  *	- If chained, the level used as reference for the chain
  *	  must be in this dungeon, must be previously defined, and
  *	  the level chained from must be "non-probabilistic" (ie.
@@ -2218,21 +2248,21 @@ check_branch()
 		yyerror("Branch defined outside of dungeon.");
 		return(0);
 	}
-
+#if 0
 	for(i = 0; i < n_dgns; i++)
 	    if(!strcmp(tmpdungeon[i].name, tmpbranch[n_brs].name)) {
 
 		yyerror("Reverse branching not allowed.");
 		return(0);
 	    }
+#endif
+	if(tmpbranch[n_dgns].chain == -2) {
 
-	if(tmpbranch[i].chain == -2) {
-
-		yyerror("Invaild branch chain reference.");
+		yyerror("Invalid branch chain reference.");
 		return(0);
-	} else if(tmpbranch[i].chain != -1) {	/* it is chained */
+	} else if(tmpbranch[n_dgns].chain != -1) {	/* it is chained */
 
-	    if(tmplevel[tmpbranch[i].chain].chance != 100) {
+	    if(tmplevel[tmpbranch[n_dgns].chain].chance != 100) {
 		yyerror("Branch cannot chain from a probabilistic level.");
 		return(0);
 	    }
@@ -2261,17 +2291,17 @@ output_dgn()
 {
 	int	nd, cl = 0, nl = 0,
 		    cb = 0, nb = 0;
-	static struct version_info version_data = {
-			VERSION_NUMBER, VERSION_FEATURES,
-			VERSION_SANITY1, VERSION_SANITY2
-	};
+        static struct version_info version_data = {
+                        VERSION_NUMBER, VERSION_FEATURES,
+                        VERSION_SANITY1, VERSION_SANITY2
+        };
 
 	if(++n_dgns <= 0) {
 	    yyerror("FATAL - no dungeons were defined.");
 	    exit(EXIT_FAILURE);
 	}
 
-	if (fwrite((char *)&version_data, sizeof version_data, 1, yyout) != 1) {
+        if (fwrite((char *)&version_data, sizeof version_data, 1, yyout) != 1) {
 	    yyerror("FATAL - output failure.");
 	    exit(EXIT_FAILURE);
 	}

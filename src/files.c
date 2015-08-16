@@ -5,8 +5,20 @@
 #include "hack.h"
 #include "dlb.h"
 
+/* WAC for config file */
+#include "filename.h"
+/* needs to be after hack.h. Caused .slashemrc to never be read on UNIX */
+
 #ifdef TTY_GRAPHICS
 #include "wintty.h" /* more() */
+#endif
+
+#if defined(GL_GRAPHICS) || defined(SDL_GRAPHICS)
+#include "winGL.h"  /* Sdlgl_parse_options */
+#endif
+
+#ifdef PROXY_GRAPHICS
+#include "winproxy.h" /* proxy_config_open() */
 #endif
 
 #include <ctype.h>
@@ -40,6 +52,20 @@ extern int errno;
 #include <signal.h>
 #endif
 
+#ifndef NO_SIGNAL
+#include <signal.h>
+#endif
+
+/* WAC moved to below
+#include <sys\stat.h>
+*/
+
+/* ALI: For compatibility */
+#ifndef FILE_AREAS
+#define compress(file)		compress_area(NULL, file)
+#define uncompress(file)	uncompress_area(NULL, file)
+#endif
+
 #if defined(MSDOS) || defined(OS2) || defined(TOS) || defined(WIN32)
 # ifndef GNUDOS
 #include <sys\stat.h>
@@ -61,8 +87,8 @@ char bones[] = "bonesnn.xxx";
 char lock[PL_NSIZ+14] = "1lock"; /* long enough for uid+name+.99 */
 #else
 # if defined(MFLOPPY)
-char bones[FILENAME];		/* pathname of bones files */
-char lock[FILENAME];		/* pathname of level files */
+char bones[FILENAMELEN];           /* pathname of bones files */
+char lock[FILENAMELEN];            /* pathname of level files */
 # endif
 # if defined(VMS)
 char bones[] = "bonesnn.xxx;1";
@@ -83,7 +109,7 @@ char lock[PL_NSIZ+25];		/* long enough for username+-+name+.99 */
 #  if defined(WIN32)
 #define SAVESIZE	(PL_NSIZ + 40)	/* username-player.NetHack-saved-game */
 #  else
-#define SAVESIZE	FILENAME	/* from macconf.h or pcconf.h */
+#define SAVESIZE        FILENAMELEN        /* from macconf.h or pcconf.h */
 #  endif
 # endif
 #endif
@@ -147,10 +173,13 @@ extern int n_dgns;		/* from dungeon.c */
 STATIC_DCL char *FDECL(set_bonesfile_name, (char *,d_level*));
 STATIC_DCL char *NDECL(set_bonestemp_name);
 #ifdef COMPRESS
-STATIC_DCL void FDECL(redirect, (const char *,const char *,FILE *,BOOLEAN_P));
-STATIC_DCL void FDECL(docompress_file, (const char *,BOOLEAN_P));
+STATIC_DCL void FDECL(redirect, (const char *,const char *,const char *,
+	FILE *,BOOLEAN_P));
+STATIC_DCL void FDECL(docompress_file, (const char *,const char *,BOOLEAN_P));
 #endif
+#ifndef FILE_AREAS
 STATIC_DCL char *FDECL(make_lockname, (const char *,char *));
+#endif
 STATIC_DCL FILE *FDECL(fopen_config_file, (const char *));
 STATIC_DCL int FDECL(get_uchars, (FILE *,char *,char *,uchar *,BOOLEAN_P,int,const char *));
 int FDECL(parse_config_line, (FILE *,char *,char *,char *));
@@ -345,6 +374,11 @@ char *reasonbuf;
 	return 1;
 }
 
+/*
+ * When file areas are in use, fopen_datafile_area is used instead.
+ */
+
+#ifndef FILE_AREA
 /* fopen a file, with OS-dependent bells and whistles */
 /* NOTE: a simpler version of this routine also exists in util/dlb_main.c */
 FILE *
@@ -368,6 +402,7 @@ int prefix;
 #endif
 	return fp;
 }
+#endif	/* FILE_AREA */
 
 /* ----------  BEGIN LEVEL FILE HANDLING ----------- */
 
@@ -424,34 +459,47 @@ int lev;
 char errbuf[];
 {
 	int fd;
+#ifndef FILE_AREAS
 	const char *fq_lock;
+#endif
 
 	if (errbuf) *errbuf = '\0';
 	set_levelfile_name(lock, lev);
+#ifndef FILE_AREAS
 	fq_lock = fqname(lock, LEVELPREFIX, 0);
+#endif
 
 #if defined(MICRO) || defined(WIN32)
 	/* Use O_TRUNC to force the file to be shortened if it already
 	 * exists and is currently longer.
 	 */
-# ifdef HOLD_LOCKFILE_OPEN
+# ifdef FILE_AREAS
+	fd = open_area(FILE_AREA_LEVL, lock,
+	  O_WRONLY |O_CREAT | O_TRUNC | O_BINARY, FCMASK);
+# else
+#  ifdef HOLD_LOCKFILE_OPEN
 	if (lev == 0)
-		fd = open_levelfile_exclusively(fq_lock, lev,
-				O_WRONLY |O_CREAT | O_TRUNC | O_BINARY);
+	    fd = open_levelfile_exclusively(fq_lock, lev,
+			    O_WRONLY |O_CREAT | O_TRUNC | O_BINARY);
 	else
-# endif
+#  endif
 	fd = open(fq_lock, O_WRONLY |O_CREAT | O_TRUNC | O_BINARY, FCMASK);
-#else
+# endif
+#else	/* MICRO */
+# ifdef FILE_AREAS
+	fd = creat_area(FILE_AREA_LEVL, lock, FCMASK);
+# else
 # ifdef MAC
 	fd = maccreat(fq_lock, LEVL_TYPE);
 # else
 	fd = creat(fq_lock, FCMASK);
 # endif
+# endif	/* FILE_AREAS */
 #endif /* MICRO || WIN32 */
 
 	if (fd >= 0)
 	    level_info[lev].flags |= LFILE_EXISTS;
-	else if (errbuf)	/* failure explanation */
+	else if (errbuf)        /* failure explanation */
 	    Sprintf(errbuf,
 		    "Cannot create file \"%s\" for level %d (errno %d).",
 		    lock, lev, errno);
@@ -466,26 +514,34 @@ int lev;
 char errbuf[];
 {
 	int fd;
+#ifndef FILE_AREAS
 	const char *fq_lock;
+#endif
 
 	if (errbuf) *errbuf = '\0';
 	set_levelfile_name(lock, lev);
+#ifndef FILE_AREAS
 	fq_lock = fqname(lock, LEVELPREFIX, 0);
+#endif
 #ifdef MFLOPPY
 	/* If not currently accessible, swap it in. */
 	if (level_info[lev].where != ACTIVE)
 		swapin_file(lev);
 #endif
-#ifdef MAC
-	fd = macopen(fq_lock, O_RDONLY | O_BINARY, LEVL_TYPE);
+#ifdef FILE_AREAS
+	fd = open_area(FILE_AREA_LEVL, lock, O_RDONLY | O_BINARY, 0);
 #else
-# ifdef HOLD_LOCKFILE_OPEN
+# ifdef MAC
+	fd = macopen(fq_lock, O_RDONLY | O_BINARY, LEVL_TYPE);
+# else
+#  ifdef HOLD_LOCKFILE_OPEN
 	if (lev == 0)
 		fd = open_levelfile_exclusively(fq_lock, lev, O_RDONLY | O_BINARY );
 	else
-# endif
+#  endif
 	fd = open(fq_lock, O_RDONLY | O_BINARY, 0);
-#endif
+# endif
+#endif	/* FILE_AREAS */
 
 	/* for failure, return an explanation that our caller can use;
 	   settle for `lock' instead of `fq_lock' because the latter
@@ -509,10 +565,14 @@ int lev;
 	 */
 	if (lev == 0 || (level_info[lev].flags & LFILE_EXISTS)) {
 		set_levelfile_name(lock, lev);
-#ifdef HOLD_LOCKFILE_OPEN
+#ifdef FILE_AREAS
+		(void) remove_area(FILE_AREA_LEVL, lock, 0);
+#else
+# ifdef HOLD_LOCKFILE_OPEN
 		if (lev == 0) really_close();
-#endif
+# endif
 		(void) unlink(fqname(lock, LEVELPREFIX, 0));
+#endif
 		level_info[lev].flags &= ~LFILE_EXISTS;
 	}
 }
@@ -521,6 +581,7 @@ int lev;
 void
 clearlocks()
 {
+/* [Tom] Watcom.....
 #if !defined(PC_LOCKING) && defined(MFLOPPY) && !defined(AMIGA)
 	eraseall(levels, alllevels);
 	if (ramdisk)
@@ -530,11 +591,12 @@ clearlocks()
 
 # if defined(UNIX) || defined(VMS)
 	(void) signal(SIGHUP, SIG_IGN);
-# endif
+# endif */
 	/* can't access maxledgerno() before dungeons are created -dlc */
+	int x;
 	for (x = (n_dgns ? maxledgerno() : 0); x >= 0; x--)
 		delete_levelfile(x);	/* not all levels need be present */
-#endif
+/* #endif*/
 }
 
 #ifdef HOLD_LOCKFILE_OPEN
@@ -659,19 +721,30 @@ char errbuf[];
 	if (errbuf) *errbuf = '\0';
 	*bonesid = set_bonesfile_name(bones, lev);
 	file = set_bonestemp_name();
+#ifndef FILE_AREAS
 	file = fqname(file, BONESPREFIX, 0);
+#endif
 
 #if defined(MICRO) || defined(WIN32)
 	/* Use O_TRUNC to force the file to be shortened if it already
 	 * exists and is currently longer.
 	 */
+# ifdef FILE_AREAS
+	fd = open_area(FILE_AREA_BONES, file,
+	  O_WRONLY |O_CREAT | O_TRUNC | O_BINARY, FCMASK);
+# else
 	fd = open(file, O_WRONLY |O_CREAT | O_TRUNC | O_BINARY, FCMASK);
+# endif
 #else
+# ifdef FILE_AREAS
+	fd = creat_area(FILE_AREA_BONES, file, FCMASK);
+# else
 # ifdef MAC
 	fd = maccreat(file, BONE_TYPE);
 # else
 	fd = creat(file, FCMASK);
 # endif
+# endif	/* FILE_AREAS */
 #endif
 	if (fd < 0 && errbuf) /* failure explanation */
 	    Sprintf(errbuf,
@@ -687,7 +760,11 @@ char errbuf[];
 	   ANDs the mask with the user's default protection, which usually
 	   denies some or all access to world.
 	 */
+#  ifndef FILE_AREAS
 	(void) chmod(file, FCMASK | 007);  /* allow other users full access */
+#  else
+	(void) chmod_area(FILE_AREA_BONES, file, FCMASK | 007);
+#  endif
 # endif /* VMS && !SECURE */
 
 	return fd;
@@ -701,8 +778,12 @@ cancel_bonesfile()
 	const char *tempname;
 
 	tempname = set_bonestemp_name();
+# ifdef FILE_AREAS
+	(void) remove_area(FILE_AREA_BONES, tempname);
+# else
 	tempname = fqname(tempname, BONESPREFIX, 0);
 	(void) unlink(tempname);
+# endif
 }
 #endif /* MFLOPPY */
 
@@ -715,23 +796,35 @@ d_level *lev;
 	int ret;
 
 	(void) set_bonesfile_name(bones, lev);
+#ifndef FILE_AREAS
 	fq_bones = fqname(bones, BONESPREFIX, 0);
+#endif
 	tempname = set_bonestemp_name();
+#ifndef FILE_AREAS
 	tempname = fqname(tempname, BONESPREFIX, 1);
+#endif
 
-#if (defined(SYSV) && !defined(SVR4)) || defined(GENIX)
+#ifdef FILE_AREAS
+	ret = rename_area(FILE_AREA_BONES, tempname, bones);
+#else
+# if (defined(SYSV) && !defined(SVR4)) || defined(GENIX)
 	/* old SYSVs don't have rename.  Some SVR3's may, but since they
 	 * also have link/unlink, it doesn't matter. :-)
 	 */
 	(void) unlink(fq_bones);
 	ret = link(tempname, fq_bones);
 	ret += unlink(tempname);
-#else
+# else
 	ret = rename(tempname, fq_bones);
-#endif
+# endif
+#endif	/* FILE_AREAS */
 #ifdef WIZARD
 	if (wizard && ret != 0)
+#ifdef FILE_AREAS
+		pline("couldn't rename %s to %s.", tempname, bones);
+#else
 		pline("couldn't rename %s to %s.", tempname, fq_bones);
+#endif
 #endif
 }
 
@@ -745,13 +838,18 @@ char **bonesid;
 	int fd;
 
 	*bonesid = set_bonesfile_name(bones, lev);
+#ifdef FILE_AREAS
+	uncompress_area(FILE_AREA_BONES, bones);  /* no effect if nonexistent */
+	fd = open_area(FILE_AREA_BONES, bones, O_RDONLY | O_BINARY, 0);
+#else
 	fq_bones = fqname(bones, BONESPREFIX, 0);
 	uncompress(fq_bones);	/* no effect if nonexistent */
-#ifdef MAC
+# ifdef MAC
 	fd = macopen(fq_bones, O_RDONLY | O_BINARY, BONE_TYPE);
-#else
+# else
 	fd = open(fq_bones, O_RDONLY | O_BINARY, 0);
-#endif
+# endif
+#endif	/* FILE_AREAS */
 	return fd;
 }
 
@@ -761,7 +859,11 @@ delete_bonesfile(lev)
 d_level *lev;
 {
 	(void) set_bonesfile_name(bones, lev);
+#ifdef FILE_AREAS
+	return !(remove_area(FILE_AREA_BONES, bones) < 0);
+#else
 	return !(unlink(fqname(bones, BONESPREFIX, 0)) < 0);
+#endif
 }
 
 
@@ -770,7 +872,11 @@ d_level *lev;
 void
 compress_bonesfile()
 {
+#ifdef FILE_AREAS
+	compress_area(FILE_AREA_BONES, bones);
+#else
 	compress(fqname(bones, BONESPREFIX, 0));
+#endif
 }
 
 /* ----------  END BONES FILE HANDLING ----------- */
@@ -787,8 +893,13 @@ set_savefile_name()
 	char fnamebuf[BUFSZ], encodedfnamebuf[BUFSZ];
 #endif
 #ifdef VMS
+#ifndef FILE_AREAS
 	Sprintf(SAVEF, "[.save]%d%s", getuid(), plname);
 	regularize(SAVEF+7);
+#else
+	Sprintf(SAVEF, "%d%s", getuid(), plname);
+	regularize(SAVEF);
+#endif
 	Strcat(SAVEF, ";1");
 #else
 # if defined(MICRO)
@@ -808,6 +919,7 @@ set_savefile_name()
 	}
 	Strcat(SAVEF, ".sav");
 # else
+#  ifndef FILE_AREAS
 #  if defined(WIN32)
 	/* Obtain the name of the logged on user and incorporate
 	 * it into the name. */
@@ -819,6 +931,10 @@ set_savefile_name()
 	Sprintf(SAVEF, "save/%d%s", (int)getuid(), plname);
 	regularize(SAVEF+5);	/* avoid . or / in name */
 #  endif /* WIN32 */
+#  else
+	Sprintf(SAVEF, "%d%s", (int)getuid(), plname);
+	regularize(SAVEF);      /* avoid . or / in name */
+#  endif
 # endif	/* MICRO */
 #endif /* VMS   */
 }
@@ -859,19 +975,32 @@ set_error_savefile()
 int
 create_savefile()
 {
+#ifndef FILE_AREAS
 	const char *fq_save;
+#endif
 	int fd;
 
-	fq_save = fqname(SAVEF, SAVEPREFIX, 0);
-#if defined(MICRO) || defined(WIN32)
-	fd = open(fq_save, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, FCMASK);
-#else
-# ifdef MAC
-	fd = maccreat(fq_save, SAVE_TYPE);
+#ifdef FILE_AREAS
+# ifdef MICRO
+	fd = open_area(FILE_AREA_SAVE, SAVEF,
+	  O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, FCMASK);
 # else
-	fd = creat(fq_save, FCMASK);
+	fd = creat_area(FILE_AREA_SAVE, SAVEF, FCMASK);
 # endif
-# if defined(VMS) && !defined(SECURE)
+#else	/* FILE_AREAS */
+	fq_save = fqname(SAVEF, SAVEPREFIX, 0);
+# if defined(MICRO) || defined(WIN32)
+	fd = open(fq_save, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, FCMASK);
+# else
+#  ifdef MAC
+	fd = maccreat(fq_save, SAVE_TYPE);
+#  else
+	fd = creat(fq_save, FCMASK);
+#  endif
+# endif /* MICRO */
+#endif  /* FILE_AREAS */
+
+#if defined(VMS) && !defined(SECURE)
 	/*
 	   Make sure the save file is owned by the current process.  That's
 	   the default for non-privileged users, but for priv'd users the
@@ -880,9 +1009,12 @@ create_savefile()
 #  ifdef getuid	/*(see vmsunix.c)*/
 #   undef getuid
 #  endif
+# ifdef FILE_AREAS
+	(void) chown_area(FILE_AREA_SAVE, SAVEF, getuid(), getgid());
+# else
 	(void) chown(fq_save, getuid(), getgid());
-# endif /* VMS && !SECURE */
-#endif	/* MICRO */
+# endif
+#endif /* VMS && !SECURE */
 
 	return fd;
 }
@@ -892,15 +1024,19 @@ create_savefile()
 int
 open_savefile()
 {
-	const char *fq_save;
 	int fd;
 
-	fq_save = fqname(SAVEF, SAVEPREFIX, 0);
-#ifdef MAC
-	fd = macopen(fq_save, O_RDONLY | O_BINARY, SAVE_TYPE);
+#ifdef FILE_AREAS
+	fd = open_area(FILE_AREA_SAVE, SAVEF, O_RDONLY | O_BINARY, 0);
 #else
+	const char *fq_save;
+	fq_save = fqname(SAVEF, SAVEPREFIX, 0);
+# ifdef MAC
+	fd = macopen(fq_save, O_RDONLY | O_BINARY, SAVE_TYPE);
+# else
 	fd = open(fq_save, O_RDONLY | O_BINARY, 0);
-#endif
+# endif
+#endif	/* FILE_AREAS */
 	return fd;
 }
 
@@ -909,7 +1045,22 @@ open_savefile()
 int
 delete_savefile()
 {
+/*WAC OK...this is probably a contreversial addition.  It's an option tho*/
+#ifdef KEEP_SAVE
+/* Wizard mode already has prompt*/
+	if (flags.keep_savefile && !wizard) {
+# ifdef AMIGA /*WAC If Amiga is ever supported*/
+		preserve_icon();
+# endif
+		return 1; /*Should this return 0?*/
+	}
+#endif
+
+#ifdef FILE_AREAS
+	(void) remove_area(FILE_AREA_SAVE, SAVEF);
+#else
 	(void) unlink(fqname(SAVEF, SAVEPREFIX, 0));
+#endif
 	return 0;	/* for restore_saved_game() (ex-xxxmain.c) test */
 }
 
@@ -918,7 +1069,9 @@ delete_savefile()
 int
 restore_saved_game()
 {
+#ifndef FILE_AREAS
 	const char *fq_save;
+#endif
 	int fd;
 
 	set_savefile_name();
@@ -926,12 +1079,20 @@ restore_saved_game()
 	if (!saveDiskPrompt(1))
 	    return -1;
 #endif /* MFLOPPY */
+#ifndef FILE_AREAS
 	fq_save = fqname(SAVEF, SAVEPREFIX, 0);
 
 	uncompress(fq_save);
+#else
+	uncompress_area(FILE_AREA_SAVE, SAVEF);
+#endif
 	if ((fd = open_savefile()) < 0) return fd;
 
+#ifndef FILE_AREAS
 	if (!uptodate(fd, fq_save)) {
+#else
+	if (!uptodate(fd, SAVEF)) {
+#endif
 	    (void) close(fd),  fd = -1;
 	    (void) delete_savefile();
 	}
@@ -1046,21 +1207,21 @@ char** saved;
 #ifdef COMPRESS
 
 STATIC_OVL void
-redirect(filename, mode, stream, uncomp)
-const char *filename, *mode;
+redirect(filearea, filename, mode, stream, uncomp)
+const char *filearea, *filename, *mode;
 FILE *stream;
 boolean uncomp;
 {
+#ifndef FILE_AREAS
 	if (freopen(filename, mode, stream) == (FILE *)0) {
-		(void) fprintf(stderr, "freopen of %s for %scompress failed\n",
+#else
+	if (freopen_area(filearea, filename, mode, stream) == (FILE *)0) {
+#endif
+		(void) fprintf(stderr, "redirect of %s for %scompress failed\n",
 			filename, uncomp ? "un" : "");
 		terminate(EXIT_FAILURE);
 	}
 }
-
-#include <errno.h>
-
-int x = EAGAIN;
 
 /*
  * using system() is simpler, but opens up security holes and causes
@@ -1070,8 +1231,8 @@ int x = EAGAIN;
  * cf. child() in unixunix.c.
  */
 STATIC_OVL void
-docompress_file(filename, uncomp)
-const char *filename;
+docompress_file(filearea, filename, uncomp)
+const char *filearea, *filename;
 boolean uncomp;
 {
 	char cfn[80];
@@ -1092,7 +1253,8 @@ boolean uncomp;
 # endif
 	/* when compressing, we know the file exists */
 	if (uncomp) {
-	    if ((cf = fopen(cfn, RDBMODE)) == (FILE *)0)
+	    if ((cf = fopen_datafile_area(filearea, cfn, RDBMODE, FALSE)) ==
+	      (FILE *)0)
 		    return;
 	    (void) fclose(cf);
 	}
@@ -1121,12 +1283,6 @@ boolean uncomp;
 	    }
 	}
 # endif
-	
-# ifdef COCOA_GRAPHICS
-	args[++i] = "-f";
-	args[++i] = filename;
-# endif
-	
 	args[++i] = (char *)0;
 
 # ifdef TTY_GRAPHICS
@@ -1156,15 +1312,13 @@ boolean uncomp;
 		 * without explicit filenames.  this is true of at least
 		 * compress and gzip, those mentioned in config.h.
 		 */
-# ifndef COCOA_GRAPHICS
 		if (uncomp) {
-			redirect(cfn, RDBMODE, stdin, uncomp);
-			redirect(filename, WRBMODE, stdout, uncomp);
+			redirect(filearea, cfn, RDBMODE, stdin, uncomp);
+			redirect(filearea, filename, WRBMODE, stdout, uncomp);
 		} else {
-			redirect(filename, RDBMODE, stdin, uncomp);
-			redirect(cfn, WRBMODE, stdout, uncomp);
+			redirect(filearea, filename, RDBMODE, stdin, uncomp);
+			redirect(filearea, cfn, WRBMODE, stdout, uncomp);
 		}
-# endif
 		(void) setgid(getgid());
 		(void) setuid(getuid());
 		(void) execv(args[0], (char *const *) args);
@@ -1178,19 +1332,31 @@ boolean uncomp;
 			uncomp ? "un" : "", filename);
 		return;
 	}
+# ifndef NO_SIGNAL
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
+# endif
 	(void) wait((int *)&i);
+# ifndef NO_SIGNAL
 	(void) signal(SIGINT, (SIG_RET_TYPE) done1);
+# endif
 # ifdef WIZARD
 	if (wizard) (void) signal(SIGQUIT, SIG_DFL);
 # endif
 	if (i == 0) {
 	    /* (un)compress succeeded: remove file left behind */
 	    if (uncomp)
+#ifndef FILE_AREAS
 		(void) unlink(cfn);
+#else
+		(void) remove_area(filearea, cfn);
+#endif
 	    else
+#ifndef FILE_AREAS
 		(void) unlink(filename);
+#else
+		(void) remove_area(filearea, filename);
+#endif
 	} else {
 	    /* (un)compress failed; remove the new, bad file */
 	    if (uncomp) {
@@ -1221,35 +1387,41 @@ boolean uncomp;
 
 /* compress file */
 void
-compress(filename)
-const char *filename;
+compress_area(filearea, filename)
+const char *filearea, *filename;
 {
 #ifndef COMPRESS
-#if (defined(macintosh) && (defined(__SC__) || defined(__MRC__))) || defined(__MWERKS__)
+#if defined(MAC_MPW) || defined(__MWERKS__)
 # pragma unused(filename)
 #endif
 #else
-	docompress_file(filename, FALSE);
+	docompress_file(filearea, filename, FALSE);
 #endif
 }
 
 
 /* uncompress file if it exists */
 void
-uncompress(filename)
-const char *filename;
+uncompress_area(filearea, filename)
+const char *filearea, *filename;
 {
 #ifndef COMPRESS
-#if (defined(macintosh) && (defined(__SC__) || defined(__MRC__))) || defined(__MWERKS__)
+#if defined(MAC_MPW) || defined(__MWERKS__)
 # pragma unused(filename)
 #endif
 #else
-	docompress_file(filename, TRUE);
+	docompress_file(filearea, filename, TRUE);
 #endif
 }
 
 /* ----------  END FILE COMPRESSION HANDLING ----------- */
 
+
+/*
+ * When file areas are in use, (un)lock_file_area are used instead.
+ */
+
+#ifndef FILE_AREAS
 
 /* ----------  BEGIN FILE LOCKING HANDLING ----------- */
 
@@ -1266,7 +1438,7 @@ make_lockname(filename, lockname)
 const char *filename;
 char *lockname;
 {
-#if (defined(macintosh) && (defined(__SC__) || defined(__MRC__))) || defined(__MWERKS__)
+#if defined(MAC_MPW) || defined(__MWERKS__)
 # pragma unused(filename,lockname)
 	return (char*)0;
 #else
@@ -1303,7 +1475,7 @@ const char *filename;
 int whichprefix;
 int retryct;
 {
-#if (defined(macintosh) && (defined(__SC__) || defined(__MRC__))) || defined(__MWERKS__)
+#if defined(MAC_MPW) || defined(__MWERKS__)
 # pragma unused(filename, retryct)
 #endif
 	char locknambuf[BUFSZ];
@@ -1323,8 +1495,6 @@ int retryct;
 
 #if defined(UNIX) || defined(VMS)
 # ifdef NO_FILE_LINKS
-	char dir[ 200 ] = "";
-	getcwd(dir, 200);
 	while ((lockfd = open(lockname, O_RDWR|O_CREAT|O_EXCL, 0666)) == -1) {
 # else
 	while (link(filename, lockname) == -1) {
@@ -1424,9 +1594,6 @@ int retryct;
 void
 unlock_file(filename)
 const char *filename;
-#if defined(macintosh) && (defined(__SC__) || defined(__MRC__))
-# pragma unused(filename)
-#endif
 {
 	char locknambuf[BUFSZ];
 	const char *lockname;
@@ -1458,16 +1625,18 @@ const char *filename;
 
 /* ----------  END FILE LOCKING HANDLING ----------- */
 
+#endif	/* FILE_AREAS */
 
 /* ----------  BEGIN CONFIG FILE HANDLING ----------- */
 
 const char *configfile =
+                        NH_CONFIG_FILE;
+/* WAC This stuff is in filename.h now
 #ifdef UNIX
 			".nethackrc";
 #else
 # if defined(MAC) || defined(__BEOS__)
 			"NetHack Defaults";
-# else
 #  if defined(MSDOS) || defined(WIN32)
 			"defaults.nh";
 #  else
@@ -1475,6 +1644,7 @@ const char *configfile =
 #  endif
 # endif
 #endif
+*/
 
 
 #ifdef MSDOS
@@ -1545,21 +1715,25 @@ const char *filename;
 #else
 	/* constructed full path names don't need fqname() */
 # ifdef VMS
-	if ((fp = fopenp(fqname("nethackini", CONFIGPREFIX, 0), "r"))
+	if ((fp = fopenp(fqname(NH_CONFIG_FILE, CONFIGPREFIX, 0), "r"))
 								!= (FILE *)0) {
-		configfile = "nethackini";
+		configfile = NH_CONFIG_FILE;
 		return(fp);
 	}
-	if ((fp = fopenp("sys$login:nethack.ini", "r")) != (FILE *)0) {
-		configfile = "nethack.ini";
+	if ((fp = fopenp(NH_CONFIG_FILE2, "r")) != (FILE *)0) {
+		configfile = index(NH_CONFIG_FILE2, ':');
+		if (configfile)
+			configfile++;
+		else
+			configfile = NH_CONFIG_FILE2;
 		return(fp);
 	}
 
 	envp = nh_getenv("HOME");
 	if (!envp)
-		Strcpy(tmp_config, "NetHack.cnf");
+		Strcpy(tmp_config, NH_CONFIG_FILE3);
 	else
-		Sprintf(tmp_config, "%s%s", envp, "NetHack.cnf");
+		Sprintf(tmp_config, "%s%s", envp, NH_CONFIG_FILE3);
 	if ((fp = fopenp(tmp_config, "r")) != (FILE *)0)
 		return(fp);
 # else	/* should be only UNIX left */
@@ -1592,8 +1766,18 @@ const char *filename;
 #endif
 		details = "";
 	    raw_printf("Couldn't open default config file %s %s(%d).",
-		       tmp_config, details, errno);
+			tmp_config, details, errno);
 	    wait_synch();
+	}
+	else if (!strncmp(windowprocs.name, "proxy/", 6)) {
+	    fp = fopenp("/etc/slashem/proxy.slashemrc", "r");
+	    if (fp != (FILE *)0)
+		return(fp);
+	    else if (errno != ENOENT) {
+		raw_printf("Couldn't open /etc/slashem/proxy.slashemrc (%d).",
+				errno);
+		wait_synch();
+	    }
 	}
 # endif
 #endif
@@ -1693,7 +1877,7 @@ char		*buf;
 char		*tmp_ramdisk;
 char		*tmp_levels;
 {
-#if (defined(macintosh) && (defined(__SC__) || defined(__MRC__))) || defined(__MWERKS__)
+#if defined(MAC_MPW) || defined(__MWERKS__)
 # pragma unused(tmp_ramdisk,tmp_levels)
 #endif
 	char		*bufp, *altp;
@@ -1705,7 +1889,7 @@ char		*tmp_levels;
 
 	/* remove trailing whitespace */
 	bufp = eos(buf);
-	while (--bufp > buf && isspace(*bufp))
+	while (--bufp > buf && isspace((int)*bufp))
 		continue;
 
 	if (bufp <= buf)
@@ -1720,7 +1904,7 @@ char		*tmp_levels;
 	if (!bufp) return 0;
 
 	/* skip  whitespace between '=' and value */
-	do { ++bufp; } while (isspace(*bufp));
+	do { ++bufp; } while (isspace((int)*bufp));
 
 	/* Go through possible variables */
 	/* some of these (at least LEVELS and SAVE) should now set the
@@ -1730,6 +1914,8 @@ char		*tmp_levels;
 		parseoptions(bufp, TRUE, TRUE);
 		if (plname[0])		/* If a name was given */
 			plnamesuffix();	/* set the character class */
+	} else if (match_varname(buf, "TILESETS", 7)) {
+		parsetileset(bufp);
 #ifdef AUTOPICKUP_EXCEPTIONS
 	} else if (match_varname(buf, "AUTOPICKUP_EXCEPTION", 5)) {
 		add_autopickup_exception(bufp);
@@ -1804,10 +1990,32 @@ char		*tmp_levels;
 	    (void) strncpy(dogname, bufp, PL_PSIZ-1);
 	} else if (match_varname(buf, "CATNAME", 3)) {
 	    (void) strncpy(catname, bufp, PL_PSIZ-1);
+	} else if (match_varname(buf, "WOLFNAME", 3)) {
+            (void) strncpy(wolfname, bufp, PL_PSIZ-1);
+	} else if (match_varname(buf, "GHOULNAME", 3)) {
+            (void) strncpy(ghoulname, bufp, PL_PSIZ-1);
+#if 0
+	} else if (match_varname(buf, "BATNAME", 3)) {
+            (void) strncpy(batname, bufp, PL_PSIZ-1);
+	} else if (match_varname(buf, "SNAKENAME", 3)) {
+            (void) strncpy(batname, bufp, PL_PSIZ-1);
+	} else if (match_varname(buf, "RATNAME", 3)) {
+            (void) strncpy(batname, bufp, PL_PSIZ-1);
+	} else if (match_varname(buf, "BADGERNAME", 3)) {
+            (void) strncpy(batname, bufp, PL_PSIZ-1);
+	} else if (match_varname(buf, "REDDRAGONNAME", 3)) {
+            (void) strncpy(batname, bufp, PL_PSIZ-1);
+	} else if (match_varname(buf, "WHITEDRAGONNAME", 3)) {
+            (void) strncpy(batname, bufp, PL_PSIZ-1);
+#endif
 
 	} else if (match_varname(buf, "BOULDER", 3)) {
 	    (void) get_uchars(fp, buf, bufp, &iflags.bouldersym, TRUE,
 			      1, "BOULDER");
+	} else if (match_varname(buf, "MENUCOLOR", 9)) {
+#ifdef MENU_COLOR
+	   add_menu_coloring(bufp);
+#endif
 	} else if (match_varname(buf, "GRAPHICS", 4)) {
 	    len = get_uchars(fp, buf, bufp, translate, FALSE,
 			     MAXPCHARS, "GRAPHICS");
@@ -1834,7 +2042,7 @@ char		*tmp_levels;
 	    (void) get_uchars(fp, buf, bufp, &(monsyms[1]), TRUE,
 					MAXMCLASSES-1, "MONSTERS");
 	} else if (match_varname(buf, "WARNINGS", 5)) {
-	    (void) get_uchars(fp, buf, bufp, translate, FALSE,
+	    (void) get_uchars(fp, buf, bufp, translate, TRUE,
 					WARNCOUNT, "WARNINGS");
 	    assign_warnings(translate);
 #ifdef WIZARD
@@ -1975,6 +2183,10 @@ char		*tmp_levels;
 		extern int qt_compact_mode;
 		qt_compact_mode = atoi(bufp);
 #endif
+#if defined(GL_GRAPHICS) || defined(SDL_GRAPHICS)
+	} else if (match_varname(buf, "GL_OPTIONS", 10)) {
+		Sdlgl_parse_options(bufp, TRUE, TRUE);
+#endif
 	} else
 		return 0;
 	return 1;
@@ -2008,8 +2220,17 @@ const char *filename;
 #endif
 	char	buf[4*BUFSZ];
 	FILE	*fp;
+	int     i;
+#ifdef PROXY_GRAPHICS
+	int	found = FALSE;
 
-	if (!(fp = fopen_config_file(filename))) return;
+	if (!(fp = fopen_config_file(filename)))
+	    goto clnt_process;
+	else
+	    found = TRUE;
+#else
+	if (!(fp = fopen_config_file(filename))) goto post_process;
+#endif
 
 #if defined(MICRO) || defined(WIN32)
 # ifdef MFLOPPY
@@ -2033,6 +2254,50 @@ const char *filename;
 	/* turn off detection of duplicate configfile options */
 	set_duplicate_opt_detection(0);
 
+#ifdef PROXY_GRAPHICS
+clnt_process:
+	/*
+	 * When acting as a proxy server, allow the client to provide
+	 * its own config file which overrides values in our config file.
+	 * Note: We don't want to warn of values being present in both
+	 * files, but we do want to warn of duplicates within each file.
+	 */
+	if (!strncmp(windowprocs.name, "proxy/", 6) &&
+		(fp = proxy_config_file_open())) {
+	    found = TRUE;
+	    set_duplicate_opt_detection(1);
+	    while (fgets(buf, 4*BUFSZ, fp)) {
+		if (match_varname(buf, "TILESETS", 7) ||
+		   match_varname(buf, "HACKDIR", 4) ||
+		   match_varname(buf, "LEVELDIR", 4) ||
+		   match_varname(buf, "LEVELS", 4) ||
+		   match_varname(buf, "SAVEDIR", 4) ||
+		   match_varname(buf, "BONESDIR", 5) ||
+		   match_varname(buf, "DATADIR", 4) ||
+		   match_varname(buf, "SCOREDIR", 4) ||
+		   match_varname(buf, "LOCKDIR", 4) ||
+		   match_varname(buf, "CONFIGDIR", 4) ||
+		   match_varname(buf, "TROUBLEDIR", 4) ||
+		   match_varname(buf, "SOUNDDIR", 8) ||
+		   match_varname(buf, "SOUND", 5)) {
+		    /* Quietly ignore many commands. There's no sense in
+		     * the client configuring these and some introduce
+		     * potential security breachs.
+		     */
+		    continue;
+		}
+		if (!parse_config_line(fp, buf, tmp_ramdisk, tmp_levels)) {
+		    pline("Bad option line:  \"%.50s\"", buf);
+		    wait_synch();
+		}
+	    }
+	    proxy_config_file_close(fp);
+	    set_duplicate_opt_detection(0);
+	}
+
+	if (!found) goto post_process;
+#endif
+
 #if defined(MICRO) && !defined(NOCWD_ASSUMPTIONS)
 	/* should be superseded by fqn_prefix[] */
 # ifdef MFLOPPY
@@ -2049,6 +2314,28 @@ const char *filename;
 	Strcpy(bones, levels);
 # endif /* MFLOPPY */
 #endif /* MICRO */
+post_process:
+	if (!no_tilesets) {
+		for(i = 0; strlen(def_tilesets[i].name); i++) {
+			strcpy(tilesets[i].name, def_tilesets[i].name);
+			strcpy(tilesets[i].file, def_tilesets[i].file);
+			tilesets[i].flags = def_tilesets[i].flags;
+		}
+		no_tilesets = i;
+	}
+	if (tileset[0] != '\0') {
+		unsigned int len = strlen(tileset);
+		for(i = 0; i < no_tilesets; i++)
+			if (len == strlen(tilesets[i].name) &&
+			    !strncmpi(tilesets[i].name, tileset, len))
+				break;
+		if (i == no_tilesets) {
+			pline("Tileset %s not defined.", tileset);
+			tileset[0] = '\0';
+		}
+		else
+			strcpy(tileset, tilesets[i].name);
+	}
 	return;
 }
 
@@ -2171,15 +2458,22 @@ void
 check_recordfile(dir)
 const char *dir;
 {
-#if (defined(macintosh) && (defined(__SC__) || defined(__MRC__))) || defined(__MWERKS__)
+#if defined(MAC_MPW) || defined(__MWERKS__)
 # pragma unused(dir)
 #endif
-	const char *fq_record;
 	int fd;
+#ifndef FILE_AREAS
+	const char *fq_record;
+#endif
 
 #if defined(UNIX) || defined(VMS)
-	fq_record = fqname(RECORD, SCOREPREFIX, 0);
+# ifdef FILE_AREAS
+	fd = open_area(NH_RECORD_AREA, NH_RECORD, O_RDWR, 0);
+# else
+	fq_record = fqname(NH_RECORD, SCOREPREFIX, 0);
 	fd = open(fq_record, O_RDWR, 0);
+# endif
+
 	if (fd >= 0) {
 # ifdef VMS	/* must be stream-lf to use UPDATE_RECORD_IN_PLACE */
 		if (!file_is_stmlf(fd)) {
@@ -2189,15 +2483,27 @@ const char *dir;
 		    wait_synch();
 		}
 # endif
-	    (void) close(fd);	/* RECORD is accessible */
+	    (void) close(fd);   /* NH_RECORD is accessible */
+#  ifdef FILE_AREAS
+	} else if ((fd = open_area(NH_RECORD_AREA, NH_RECORD, O_CREAT|O_RDWR, FCMASK)) >= 0) {
+#  else
 	} else if ((fd = open(fq_record, O_CREAT|O_RDWR, FCMASK)) >= 0) {
-	    (void) close(fd);	/* RECORD newly created */
+#  endif
+	    (void) close(fd);   /* NH_RECORD newly created */
 # if defined(VMS) && !defined(SECURE)
-	    /* Re-protect RECORD with world:read+write+execute+delete access. */
+	    /* Re-protect NH_RECORD with world:read+write+execute+delete access. */
+#  ifdef FILE_AREAS
+	    (void) chmod_area(NH_RECORD_AREA, NH_RECORD, FCMASK | 007);
+#  else
 	    (void) chmod(fq_record, FCMASK | 007);
+#  endif
 # endif /* VMS && !SECURE */
 	} else {
+# ifdef FILE_AREAS
+	    raw_printf("Warning: cannot write scoreboard file %s", NH_RECORD);
+# else
 	    raw_printf("Warning: cannot write scoreboard file %s", fq_record);
+# endif
 	    wait_synch();
 	}
 #endif  /* !UNIX && !VMS */
@@ -2209,19 +2515,30 @@ const char *dir;
 	 * for later access to the file via fopen_datafile? ? */
 	(void) strncpy(tmp, dir, PATHLEN - 1);
 	tmp[PATHLEN-1] = '\0';
-	if ((strlen(tmp) + 1 + strlen(RECORD)) < (PATHLEN - 1)) {
+	if ((strlen(tmp) + 1 + strlen(NH_RECORD)) < (PATHLEN - 1)) {
 		append_slash(tmp);
-		Strcat(tmp, RECORD);
+		Strcat(tmp, NH_RECORD);
 	}
+#  ifndef FILE_AREAS
 	fq_record = tmp;
+#  endif
 # else
-	Strcpy(tmp, RECORD);
-	fq_record = fqname(RECORD, SCOREPREFIX, 0);
+	Strcpy(tmp, NH_RECORD);
+#  ifndef FILE_AREAS
+	fq_record = fqname(NH_RECORD, SCOREPREFIX, 0);
+#  endif
 # endif
 
+# ifdef FILE_AREAS
+	if ((fd = open_area(NH_RECORD_AREA, tmp, O_RDWR)) < 0) {
+# else
 	if ((fd = open(fq_record, O_RDWR)) < 0) {
+# endif
 	    /* try to create empty record */
-# if defined(AZTEC_C) || defined(_DCC) || (defined(__GNUC__) && defined(__AMIGA__))
+# if defined(FILE_AREAS)
+	    if ((fd = open_area(NH_RECORD_AREA, tmp, O_CREAT|O_RDWR,
+	      S_IREAD|S_IWRITE)) < 0) {
+# elif defined(AZTEC_C) || defined(_DCC) || (defined(__GNUC__) && defined(__AMIGA__))
 	    /* Aztec doesn't use the third argument */
 	    /* DICE doesn't like it */
 	    if ((fd = open(fq_record, O_CREAT|O_RDWR)) < 0) {
@@ -2230,16 +2547,21 @@ const char *dir;
 # endif
 	raw_printf("Warning: cannot write record %s", tmp);
 		wait_synch();
-	    } else
+		} else          /* create succeeded */
 		(void) close(fd);
 	} else		/* open succeeded */
 	    (void) close(fd);
 #else /* MICRO || WIN32*/
 
 # ifdef MAC
-	/* Create the "record" file, if necessary */
-	fq_record = fqname(RECORD, SCOREPREFIX, 0);
-	fd = macopen (fq_record, O_RDWR | O_CREAT, TEXT_TYPE);
+	/* Create the record file, if necessary */
+	fq_record = fqname(NH_RECORD, SCOREPREFIX, 0);
+	fd = macopen (fq_record, O_RDWR | O_CREAT, LOGF_TYPE);
+	if (fd != -1) macclose (fd);
+
+	/* Create the logfile, if necessary */
+	fq_record = fqname(LOGFILE, SCOREPREFIX, 0);
+	fd = macopen (fq_record, O_RDWR | O_CREAT, LOGF_TYPE);
 	if (fd != -1) macclose (fd);
 # endif /* MAC */
 

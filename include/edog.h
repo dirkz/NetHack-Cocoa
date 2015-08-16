@@ -7,10 +7,10 @@
 
 /*	various types of food, the lower, the better liked.	*/
 
-#define DOGFOOD 0
-#define CADAVER 1
-#define ACCFOOD 2
-#define MANFOOD 3
+#define DOGFOOD	0
+#define CADAVER	1
+#define ACCFOOD	2
+#define MANFOOD	3
 #define APPORT	4
 #define POISON	5
 #define UNDEF	6

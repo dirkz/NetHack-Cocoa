@@ -105,8 +105,12 @@
      MON_ALERTNESS = 321,
      MON_APPEARANCE = 322,
      CONTAINED = 323,
-     STRING = 324,
-     MAP_ID = 325
+     OBJFLAG_TYPE = 324,
+     OBJFLAGS_ID = 325,
+     RANDOMREGION_ID = 326,
+     R_REGISTER = 327,
+     STRING = 328,
+     MAP_ID = 329
    };
 #endif
 /* Tokens.  */
@@ -176,15 +180,19 @@
 #define MON_ALERTNESS 321
 #define MON_APPEARANCE 322
 #define CONTAINED 323
-#define STRING 324
-#define MAP_ID 325
+#define OBJFLAG_TYPE 324
+#define OBJFLAGS_ID 325
+#define RANDOMREGION_ID 326
+#define R_REGISTER 327
+#define STRING 328
+#define MAP_ID 329
 
 
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 132 "lev_comp.y"
+#line 135 "lev_comp.y"
 {
 	int	i;
 	char*	map;
@@ -195,7 +203,7 @@ typedef union YYSTYPE
 	} corpos;
 }
 /* Line 1529 of yacc.c.  */
-#line 199 "y.tab.h"
+#line 207 "y.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

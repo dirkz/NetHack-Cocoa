@@ -32,8 +32,9 @@
 /*
  * Mac Stuff.
  */
-#ifdef macintosh	/*	Auto-defined symbol for MPW compilers (sc and mrc) */
+#if defined(__SC__) || defined(__MRC__) /* MPW compilers, but not Metrowerks */
 # define MAC
+# define MAC_MPW
 #endif
 
 #ifdef THINK_C		/* Think C auto-defined symbol */
@@ -58,6 +59,9 @@
 # define NEED_VARARGS
 #endif
 
+#ifdef __APPLE__        /* defined by GCC on Mac OS X */
+# define OSX
+#endif
 
 /*
  * Amiga setup.
@@ -107,6 +111,7 @@
 
 /*
  * Windows NT Autodetection
+ *
  */
 #ifdef _WIN32_WCE
 #define WIN_CE
@@ -115,6 +120,9 @@
 # endif
 #endif
 
+#if defined(__CYGWIN__) && !defined(UNIX)
+# define WIN32
+#endif
 #ifdef WIN32
 # undef UNIX
 # undef MSDOS
@@ -199,6 +207,13 @@
  * defined("") => (-1 != - "" - 1)
  *   [which is an unavoidable catastrophe.]
  */
+#endif
+
+#if defined(__OS2__) || defined(__EMX__)
+# ifndef OS2
+#  define OS2
+# endif
+# undef UNIX
 #endif
 
 #endif	/* CONFIG1_H */

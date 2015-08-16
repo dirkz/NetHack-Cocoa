@@ -1,4 +1,7 @@
-	SCCS Id: @(#)Install.dos	 3.4
+WAC Note:
+Allegro support can be defined in the makefile.gcc by defining ALLEG_FX
+
+SCCS Id: @(#)Install.dos	 3.4
 
 	   Copyright (c) NetHack PC Development Team 1990-2002.
        NetHack may be freely redistributed.  See license for details.
@@ -7,7 +10,7 @@
 		     NetHack 3.4 on a DOS system
          ======================================================
                    (or, How to make PC NetHack 3.4)
-                 Last revision: $Date: 2003/06/13 19:57:52 $
+                 Last revision: $Date: 2003/11/24 20:12:12 $
 
 Credit for a runnable full PC NetHack 3.4 goes to the PC Development team
 of Paul Winner, Kevin Smolkowski, Michael Allison, Yitzhak Sapir, Bill Dyer, 
@@ -55,7 +58,7 @@ I.  Dispelling the Myths:
     or byacc).  While not strictly necessary to compile nethack, they are 
     required should you desire to make any changes to the level and dungeon 
     compilers.  Flex and Bison are included with the DJGPP distribution and 
-    are also available on many archive sites. 
+    are also available on many archive sites.
 
     Also be sure to pick up djgpp v2gnu/fil41b.zip to get ls.exe and 
     touch.exe, since the Makefile uses them by default.
@@ -136,7 +139,7 @@ II. To compile your copy of NetHack on a DOS machine:
     If using DJGPP, you can choose between SCREEN_BIOS
     and SCREEN_DJGPPFAST.  Never, never, ever choose both.  Bad things
     will happen.  We are not kidding.
-
+    
 5.  If you want to change the high score list behavior, examine the top of
     topten.c, in the src directory.  You may want to change the definitions of
     PERSMAX, POINTSMIN, and ENTRYMAX.  We set POINTSMIN to 51 and ENTRYMAX to

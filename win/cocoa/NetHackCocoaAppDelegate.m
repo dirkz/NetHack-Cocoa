@@ -33,11 +33,6 @@ extern int unixmain(int argc, char **argv);
 
 @synthesize window;
 
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication
-{
-	return YES;
-}
-
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
 	netHackThread = [[NSThread alloc] initWithTarget:self selector:@selector(netHackMainLoop:) object:nil];
 	[netHackThread start];
@@ -48,28 +43,17 @@ extern int unixmain(int argc, char **argv);
 	return netHackThread && [netHackThread isExecuting];
 }
 
--(void)lockNethackCore
-{
-	[nethackCoreLock lock];
-}
--(void)unlockNethackCore
-{
-	[nethackCoreLock unlock];
-}
 
 - (void) netHackMainLoop:(id)arg {
-	extern int g_argc;
-	extern char ** g_argv;
-	
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
-	
-	nethackCoreLock = [[NSRecursiveLock alloc] init];
-	[self lockNethackCore];
+	char *argv[] = {
+		"NetHack",
+	};
 	
 	// create necessary directories
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
 	NSString *baseDirectory = [paths objectAtIndex:0];
-	baseDirectory = [baseDirectory stringByAppendingPathComponent:@"NetHackCocoa"];
+	baseDirectory = [baseDirectory stringByAppendingPathComponent:@"SlashEMCocoa"];
 	if (![[NSFileManager defaultManager] fileExistsAtPath:baseDirectory]) {
 		[[NSFileManager defaultManager] createDirectoryAtPath:baseDirectory withIntermediateDirectories:YES attributes:nil error:NULL];
 	}
@@ -84,10 +68,8 @@ extern int unixmain(int argc, char **argv);
 	[[NSUserName() capitalizedString] getCString:plname maxLength:PL_NSIZ encoding:NSASCIIStringEncoding];
 	
 	// call NetHack
-	unixmain(g_argc, g_argv);
+	unixmain(sizeof argv/sizeof argv[0], argv);
 	
-	[self unlockNethackCore];
-
 	// clean up thread pool
 	[pool release];
 }

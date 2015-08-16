@@ -5,7 +5,7 @@
 #ifndef WINTYPE_H
 #define WINTYPE_H
 
-typedef int winid;		/* a window identifier */
+typedef int winid;              /* a window identifier */
 
 /* generic parameter - must not be any larger than a pointer */
 typedef union any {
@@ -16,7 +16,7 @@ typedef union any {
     schar a_schar;
     /* add types as needed */
 } anything;
-#define ANY_P union any /* avoid typedef in prototypes */
+#define ANY_P union any	/* avoid typedef in prototypes */
 			/* (buggy old Ultrix compiler) */
 
 /* menu return list */
@@ -49,7 +49,7 @@ typedef struct mi {
 
 /* nh_poskey() modifier types */
 #define CLICK_1     1
-#define CLICK_2     2
+#define CLICK_2	    2
 
 /* invalid winid */
 #define WIN_ERR ((winid) -1)

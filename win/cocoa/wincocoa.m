@@ -25,7 +25,6 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-#import "NetHackCocoaAppDelegate.h"
 #import <Carbon/Carbon.h>	// key codes
 
 #include "dlb.h"
@@ -113,6 +112,8 @@ cocoa_outrip,
 cocoa_preference_update,
 };
 
+	
+boolean cocoa_getpos = 0;
 
 static char s_baseFilePath[FQN_MAX_FILENAME];
 
@@ -246,9 +247,6 @@ void error(const char *s, ...) {
 
 void nethack_exit(int status)
 {
-	NetHackCocoaAppDelegate * delegate = [[NSApplication sharedApplication] delegate];
-	[delegate unlockNethackCore];
-	
 	//	indicate were exiting
 	[[MainWindowController instance] nethackExited];
 

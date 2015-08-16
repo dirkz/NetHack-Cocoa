@@ -82,29 +82,6 @@
 	[acceptButton setEnabled:YES];
 }
 
--(BOOL)selectAllInGroup:(char)groupAccel
-{
-	BOOL hit = NO;
-	for ( NSButton * button in [menuView subviews] ) {
-		if ( [button class] == [NSButton class] )  {
-			NSInteger itemTag = [button tag];
-			id item = [itemDict objectForKey:[NSNumber numberWithInt:itemTag]];
-			if ( item && [item class] == [NhItem class] ) {
-				NhItem * entry = item;
-				if ( entry.group_ch == groupAccel ) {
-					[button setState:NSOnState];
-					hit = YES;
-				}
-			}
-		}
-	}
-	if ( hit ) {
-		[acceptButton setEnabled:YES];
-	}
-	return hit;
-}
-
-
 -(IBAction)selectUnknownBUC:(id)sender
 {
 	for ( NSButton * item in [menuView subviews] ) {
@@ -180,19 +157,12 @@
 -(void)keyDown:(NSEvent *)theEvent
 {
 	NSString * ch = [theEvent characters];
-	if ( [ch length] > 0 ) {
-		char c = [ch characterAtIndex:0];
-		if ( c == '.' ) {
-			// make '.' a shortcut for select all
-			[self selectAll:self];
-			return;
-		}
-		// check for group accelerator
-		if ( [self selectAllInGroup:c] ) {
-			return;
-		}
+	if ( [ch length] > 0 && [ch characterAtIndex:0] == '.' ) {
+		// make '.' a shortcut for select all
+		[self selectAll:self];
+	} else {
+		[super keyDown:theEvent];
 	}
-	[super keyDown:theEvent];
 }
 
 
@@ -364,8 +334,6 @@
 
 	for ( NhItemGroup * group in [menuParams itemGroups] ) {
 		
-		char group_accel = 0;
-		
 		for ( NhItem * item in [group items] ) {			
 			
 			BOOL isEnabled = item.identifier.a_int != -1;
@@ -383,18 +351,14 @@
 			if ( item.detail ) {
 				title = [title stringByAppendingFormat:@" (%@)", item.detail];
 			}
-			if ( group_accel > 0 && group_accel != item.group_ch )
-				group_accel = -1;
-			else 
-				group_accel = item.group_ch;
-				
+#if 0
+			// add group accelerator
+			if ( item.group_ch ) {
+				title = [title stringByAppendingFormat:@" ('%c')", item.group_ch];
+			}
+#endif		
 			// save expanded title
 			[item setTitle:title];
-		}
-
-		if ( group_accel > 0 ) {
-			// show group accelerator in title
-			[group setTitle:[group.title stringByAppendingFormat:@"   %c", group_accel]];
 		}
 	}
 }
@@ -465,150 +429,8 @@
 	return tabs;
 }
 
-static NSString * skipPrefix( NSString * s, NSString * list[] )
-{
-	for ( int i = 0; list[i] != nil; ++i ) {
-		if ( [s hasPrefix:list[i]] )
-			return [s substringFromIndex:[list[i] length]];
-	}
-	return s;
-};
 
 
-static NSString * cleanAttributedString( NSString * s, BOOL decorated )
-{
-	int i = 0;
-	// skip leading icon
-	while ( [s characterAtIndex:i] > 255 )
-		++i;
-	while ( [s characterAtIndex:i] == ' ' )
-		++i;
-	if ( [s characterAtIndex:i] == '(' )
-		i += 4;
-	s = [s substringFromIndex:i];
-	
-	if ( !decorated ) {
-		// FIXME: doesn't handle plurals, etc.
-		static NSString * amt[] = {
-			@"a ",
-			@"an ",
-			@"the ",
-			nil
-		};
-		static NSString * buc[] = {
-			@"blessed ",
-			@"cursed ",
-			@"uncursed ",
-			nil
-		};
-		static NSString * corrode1[] = {
-			@"very ",
-			@"thoroughly ",
-			nil
-		};
-		static NSString * corrode2[] = {
-			@"rustproof ",
-			@"fireproof ",
-			@"corodeproof ",
-			@"fixed ",
-			@"rusty ",
-			@"burnt ",
-			@"corroded ",
-			@"rotted ",	
-			nil
-		};
-		
-		// skip quantity
-		s = skipPrefix(s, amt);
-		while ( [[NSCharacterSet decimalDigitCharacterSet] characterIsMember:[s characterAtIndex:0]] )
-			s = [s substringFromIndex:1];
-		if ( [s characterAtIndex:0] == ' ' )
-			s = [s substringFromIndex:1];
-		// skip buc
-		s = skipPrefix(s, buc);
-		// skip corrosion
-		s = skipPrefix(s, corrode1);
-		s = skipPrefix(s, corrode2);
-	}
-	//	NSLog(@"'%@'\n",s);
-	
-	return s;
-}
-
-static NSInteger compareButtonText(id button1, id button2, void * context )
-{
-	NSString * s1 = [[button1 attributedTitle] string];
-	NSString * s2 = [[button2 attributedTitle] string];
-	
-	s1 = cleanAttributedString(s1, YES);
-	s2 = cleanAttributedString(s2, YES);
-	
-	return [s1 compare:s2 options:NSCaseInsensitiveSearch];
-}
-
--(IBAction)sortItems:(id)sender
-{
-	BOOL useDefault = [(NSButton *)sender state] == NSOffState;
-	
-	for ( NhItemGroup * group in [menuParams itemGroups] ) {
-		int len = [[group items] count];
-		// get list of buttons in this group
-		NSMutableArray * origButtonList = [NSMutableArray arrayWithCapacity:len];
-		for ( NhItem * item in [group items] ) {
-			int tag = [[[itemDict allKeysForObject:item] objectAtIndex:0] intValue];
-			NSButton * button = [menuView viewWithTag:tag];
-			[origButtonList addObject:button];
-		}
-		// sort buttons alphabetically
-		NSArray * newButtonList = useDefault 
-				? [[origButtonList copy] autorelease]
-				: [origButtonList sortedArrayUsingFunction:compareButtonText context:NULL];
-		// get list of button locations
-		NSMutableArray * posList = [NSMutableArray arrayWithCapacity:len];
-		for ( NSButton * button in origButtonList ) {
-			[posList addObject:[NSValue valueWithPoint:button.frame.origin]];
-		}
-		// sort button positions low to high
-		NSArray * posList2 = [posList sortedArrayUsingComparator:^(NSValue * o1, NSValue * o2)
-							  {
-								  NSPoint p1 = [o1 pointValue], p2 = [o2 pointValue]; 
-								  return p1.y < p2.y ? NSOrderedAscending
-														: p1.y > p2.y ? NSOrderedDescending
-														: NSOrderedSame; 
-							  }];
-		// assign new button locations
-		for ( int i = 0; i < len; ++i ) {
-			NSButton * button = [newButtonList objectAtIndex:i];
-			NSPoint pt = [[posList2 objectAtIndex:i] pointValue];
-			[button setFrameOrigin:pt];
-		}
-	}
-}
-
-typedef enum { BUC_ENUM_BLESSED, BUC_ENUM_UNCURSED, BUC_ENUM_CURSED }  BUC_ENUM;
-static BUC_ENUM GetBUC( NSString * text )
-{
-	// get blessed/cursed status
-	static struct {
-		NSString *	text;
-		BUC_ENUM	buc;
-	} List[] = {
-		@" blessed",	BUC_ENUM_BLESSED,
-		@" holy",		BUC_ENUM_BLESSED,
-		@" cursed",		BUC_ENUM_CURSED,
-		@" unholy",		BUC_ENUM_CURSED,
-	};
-	BUC_ENUM buc = BUC_ENUM_UNCURSED;
-	NSUInteger pos = NSNotFound;
-	for ( int i = 0; i < sizeof List/sizeof List[0]; ++i) {
-		NSUInteger loc = [text rangeOfString:List[i].text].location;
-		if ( loc < pos ) {
-			pos = loc;
-			buc = List[i].buc;
-		}
-	}
-	return buc;
-}
 
 -(void)windowDidLoad
 {
@@ -617,7 +439,7 @@ static BUC_ENUM GetBUC( NSString * text )
 	NSMutableDictionary		*	groupAttr	= [NSMutableDictionary dictionaryWithObject:groupFont forKey:NSFontAttributeName];
 	NSMutableDictionary		*	itemAttr	= [NSMutableDictionary dictionary];
 	int							how			= [menuParams how];
-	NSInteger					itemTag		= 1;
+	NSInteger					itemTag		= 0;
 
 	BOOL showShortcuts = how == PICK_ANY 
 					&& ([[menuParams itemGroups] count] != 1
@@ -686,7 +508,7 @@ static BUC_ENUM GetBUC( NSString * text )
 		[label release];
 		
 		for ( NhItem * item in [group items] ) {
-			
+
 			// button is disabled if identifier is -1 (which we set zero in convertFakeGroupsToRealGroups)
 			BOOL isEnabled = item.identifier.a_int != -1 || how == PICK_NONE;
 
@@ -733,21 +555,13 @@ static BUC_ENUM GetBUC( NSString * text )
 			
 			// get title
 			NSString * title = [item title];
-			
+
 			// add title to string and adjust vertical baseline of text so it aligns with icon
 			[[aString mutableString] appendString:title];
 			
 			// set paragraph style so we get tabs as we like
 			[aString addAttributes:itemAttr range:NSMakeRange(0,[[aString mutableString] length])];
 
-#if 0
-			// get blessed/cursed status
-			BUC_ENUM buc = GetBUC( title );
-			if ( buc != BUC_UNCURSED )
-				[aString addAttribute:NSForegroundColorAttributeName
-								value:(buc == BUC_ENUM_BLESSED ? [NSColor blueColor] : [NSColor redColor])
-								range:NSMakeRange(0,[[aString mutableString] length])];
-#endif
 			// adjust baseline of text so it is vertically centered with tile
 			if ( glyph != NO_GLYPH ) {
 				CGFloat offset = [[TileSet instance] imageSize].height;

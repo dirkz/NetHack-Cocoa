@@ -33,16 +33,11 @@
 #import "wincocoa.h"
 #import "TooltipWindow.h"
 #import "NSImage+FlippedDrawing.h"
-#import "NetHackCocoaAppDelegate.h"
 
 #import "Inventory.h"
-#import "NSString+Z.h"
 
 
 @implementation MainView
-
-@synthesize contextMenu;// = _contextMenu;
-@synthesize contextMenuObject;// = _contextMenuObject;
 
 NSStringEncoding	codepage437encoding;
 
@@ -214,10 +209,11 @@ NSStringEncoding	codepage437encoding;
 		XCHAR_P	cursorX, cursorY;
 		[map cursX:&cursorX	y:&cursorY];
 		
-		
+#ifdef REINCARNATION
 		if ( Is_rogue_level(&u.uz) && !iflags.wc_ascii_map ) {
 			// FIXME: we draw with the graphical tile dimensions instead of character dimensions in this case
 		}
+#endif
 	
 		// set stuff up for ascii drawing
 		NSMutableAttributedString * aString = [[[NSMutableAttributedString alloc] initWithString:@"X"] autorelease];
@@ -232,7 +228,12 @@ NSStringEncoding	codepage437encoding;
 					int glyph = [map glyphAtX:i y:j];
 					if (glyph != kNoGlyph) {
 						
-						if ( iflags.wc_ascii_map || Is_rogue_level(&u.uz) ) {
+						if ( iflags.wc_ascii_map
+#ifdef REINCARNATION
+							|| Is_rogue_level(&u.uz)
+#endif
+							) 
+						{
 							
 							// use ASCII text
 							int ochar, ocolor;
@@ -338,56 +339,6 @@ NSStringEncoding	codepage437encoding;
 	[[NhEventQueue instance] addEvent:e];
 }
 
-
-#pragma mark Context menu
-
-- (IBAction)showContextInfo:(id)sender
-{
-}
-
-- (NSString *)cleanTileDescription:(NSString *)text
-{
-	// remove context string
-	NSRange r = [text rangeOfString:@"["];
-	if ( r.location != NSNotFound ) {
-		text = [text substringToIndex:r.location];
-	}
-	// remove extra words
-	NSArray * a = [NSArray arrayWithObjects:@"tame", @"invisible", @"peaceful", @"a", @"an", @"the", nil];
-	for ( NSString * s in a ) {
-		r = [text rangeOfString:s withDelimiter:@" "];
-		if ( r.location != NSNotFound ) {
-			text = [text stringByReplacingCharactersInRange:r withString:@""];
-		}
-	}
-	text = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	return text;
-}
-- (IBAction)doWebSearch:(id)sender
-{
-	NSString * text = [contextMenuObject stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-	NSString * path = [NSString stringWithFormat:@"http://nethackwiki.com/mediawiki/index.php?search=%@",text];
-	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:path]];
-}
-
-- (NSMenu *) menuForEvent:(NSEvent *)theEvent
-{
-	NSPoint contextMenuPoint = [self convertPoint:[theEvent locationInWindow] fromView:nil];
-	contextMenuPoint.x = (int)(contextMenuPoint.x / tileSize.width);
-	contextMenuPoint.y = (int)(contextMenuPoint.y / tileSize.height);
-	if ( contextMenuPoint.x >= 0 && contextMenuPoint.x < COLNO && contextMenuPoint.y >= 0 && contextMenuPoint.y < ROWNO ) {
-		NSString * text = DescriptionForTile( contextMenuPoint.x, contextMenuPoint.y );
-		contextMenuObject = [self cleanTileDescription:text];
-		NSMenuItem * item = [contextMenu itemAtIndex:0];
-		NSString * title = [NSString stringWithFormat:@"Search the Nethack Wiki for '%@'", contextMenuObject];
-		[item setTitle:title];
-		return contextMenu;
-	}
-	return nil;
-}
-
-#pragma mark Tooltip
-
 - (void)cancelTooltip
 {
 	if ( tooltipTimer ) {
@@ -405,12 +356,7 @@ NSStringEncoding	codepage437encoding;
 NSString * DescriptionForTile( int x, int y )
 {
 	char    out_str[BUFSZ];
-
-	// get tile info, but don't interfere with nethack thread
-	NetHackCocoaAppDelegate * appDelegate = [[NSApplication sharedApplication] delegate];
-	[appDelegate lockNethackCore];
 	InventoryOfTile(x, y, out_str);
-	[appDelegate unlockNethackCore];
 
 	NSString * text = [NSString stringWithCString:out_str encoding:codepage437encoding];
 	

@@ -33,6 +33,7 @@
 	int amount;
 	int maxAmount;
 	BOOL selected;
+
 }
 
 @property (nonatomic, readonly) ANY_P identifier;
